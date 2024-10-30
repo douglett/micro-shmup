@@ -21,7 +21,7 @@ int main(int argc, char* args[]) {
 	gfx.init(160, 160);
 	// gfx.flag_hit = 1;
 
-	// Scene::tsetimage = sdl.makebmp("assets/tiles.bmp");
+	Scene::tilesetimage = sdl.makebmp("assets/ship.bmp");
 	// Scene::pimage = sdl.makebmp("assets/player.bmp");
 
 	while (!sdl.quit) {
