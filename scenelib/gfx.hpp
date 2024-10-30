@@ -61,7 +61,10 @@ struct GFX {
 	// free global
 	static void freeimagegl(int ptr)  { imagesgl.erase(ptr); }
 	// get global
-	static Image& getimagegl(int ptr)  { return imagesgl.at(ptr); }
+	static Image& getimagegl(int ptr)  {
+		if (ptr <= 0 || !imagesgl.count(ptr))  throw runtime_error("Missing image: " + to_string(ptr));
+		return imagesgl.at(ptr);
+	}
 
 	// collisions
 	static inline int collide_rect(const Rect& r1, const Rect& r2) {
@@ -201,13 +204,21 @@ struct GFX::Scene : GFX {
 	// free
 	void freeimage(int ptr)       { images.erase(ptr);  imagesgl.erase(ptr); }
 	void freesprite(int ptr)      { sprites.erase(ptr); }
-	void freespriteimage(int ptr) { freeimage( getsprite(ptr).image ); sprites.erase(ptr); }
+	void freespriteimage(int ptr) { if (sprites.count(ptr)) freeimage( getsprite(ptr).image );  sprites.erase(ptr); }
 	void freemap(int ptr)         { tilemaps.erase(ptr); }
 
-	// get (TODO: null/free error checking)
-	Image&   getimage(int ptr)  { return imagesgl.count(ptr) ? imagesgl.at(ptr) : images.at(ptr); }
-	Sprite&  getsprite(int ptr) { return sprites.at(ptr); }
-	Tilemap& getmap(int ptr)    { return tilemaps.at(ptr); }
+	// get
+	Image&   getimage(int ptr)  {
+		return images.count(ptr) ? images.at(ptr) : getimagegl(ptr);
+	}
+	Sprite&  getsprite(int ptr) {
+		if (ptr <= 0 || !sprites.count(ptr))  throw runtime_error("Missing sprite: " + to_string(ptr));
+		return sprites.at(ptr);
+	}
+	Tilemap& getmap(int ptr)    {
+		if (ptr <= 0 || !tilemaps.count(ptr))  throw runtime_error("Missing tilemap: " + to_string(ptr));
+		return tilemaps.at(ptr);
+	}
 
 	// collisions
 	int collide_sprite(const Rect& rect) {
