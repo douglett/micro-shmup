@@ -6,15 +6,14 @@ using namespace std;
 
 
 struct EnemySentry {
-	static const int TSIZE = Scene::TSIZE, ENEMY_SPEED = 1;
+	static const int TSIZE = Scene::TSIZE, ENEMY_SPEED = 1, ANIM_TT = 30;
 	GFX::Scene* gfx = NULL;
-	int enemyid = 0;
-	bool alive = true;
+	int enemyid = 0, alive = true, animtt = 0, anim = ANIM_TT;
 
 	EnemySentry(GFX::Scene& gfxref) : gfx(&gfxref) {
 		enemyid = gfx->makesprite( Scene::tilesetimage, TSIZE, TSIZE );
 		auto& enemy = gfx->getsprite( enemyid );
-		enemy.src.x = TSIZE * 5;
+		enemy.src.x = TSIZE * 4;
 		enemy.pos.x = rand() % Scene::SCENEW;
 		enemy.pos.y = -TSIZE;
 	}
@@ -24,6 +23,12 @@ struct EnemySentry {
 		enemy.pos.y += ENEMY_SPEED;
 		if (enemy.pos.y > Scene::SCENEH)
 			alive = false;
+		animtt--;
+		if (animtt <= 0) {
+			anim = (anim + 1) % 2;
+			enemy.src.x = TSIZE * ( 4 + anim );
+			animtt = ANIM_TT;
+		}
 	}
 };
 
