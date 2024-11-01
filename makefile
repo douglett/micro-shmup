@@ -1,7 +1,7 @@
 OUT  = sokoban.exe
 SRC  = src/shmup.cpp
 HEAD = scenelib/sdl.hpp scenelib/gfx.hpp scenelib/dpad.hpp \
-		src/global.hpp
+		src/global.hpp src/scene_game.hpp
 
 
 $(OUT): $(SRC) $(HEAD)
