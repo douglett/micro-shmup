@@ -6,17 +6,8 @@ SDLmanager sdl( "Shmup", 534, 480 );
 GFX gfx;
 
 
-// struct SpritePtr {
-// 	GFX::Scene& gfx;
-// 	int id;
-// 	GFX::Sprite& operator->() { return gfx.getsprite( id ); }
-// 	GFX::Sprite& operator*()  { return gfx.getsprite( id ); }
-// };
-
-
 struct GameScene : Scene {
 	// scene data
-	const int SCENEW = 80, SCENEH = 160;
 	GFX::Scene gfx;
 	int shipspriteid = 0;
 	// bullet data
@@ -61,7 +52,6 @@ struct GameScene : Scene {
 		gfx.drawscene();
 	}
 };
-
 GameScene game;
 
 

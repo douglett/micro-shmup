@@ -5,19 +5,10 @@
 
 
 struct Scene {
-	// enum GAMESCENE {
-	// 	SCENE_TITLE,
-	// 	SCENE_GAME,
-	// 	SCENE_MENU,
-	// };
-
-	static const  int TSIZE = 8;
-	static inline int tilesetimage = 0, playerimage = 0;
-	// static inline GAMESCENE currentscene = SCENE_TITLE, toscene = SCENE_TITLE;
+	static const  int TSIZE = 8, SCENEW = 80, SCENEH = 160;
+	static inline int tilesetimage = 0;
 	static inline DPad dpad;
 
-	// static void switchscene(GAMESCENE scene, int levelno=0);
-	
 	virtual void init() {}
 	virtual void update() {}
 	virtual void paint() {}
