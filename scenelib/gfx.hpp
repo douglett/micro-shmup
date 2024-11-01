@@ -176,7 +176,7 @@ struct GFX::Scene : GFX {
 		img.data.resize(w * h, 0xff000000);
 		return ptr;
 	}
-	int makesprite(int w, int h, int image) {
+	int makesprite(int image, int w, int h) {
 		int ptr = pcounter++;
 		auto& spr = sprites[ptr] = {0};
 		spr.image = image;
@@ -186,10 +186,10 @@ struct GFX::Scene : GFX {
 	}
 	int makespriteimage(int w, int h) {
 		int img = makeimage(w, h);
-		int spr = makesprite(w, h, img);
+		int spr = makesprite(img, w, h);
 		return spr;
 	}
-	int makemap(int tw, int th, int tsize, int image) {
+	int makemap(int image, int tsize, int tw, int th) {
 		int ptr = pcounter++;
 		auto& tmap = tilemaps[ptr] = {0};
 		tmap.tw = tw;

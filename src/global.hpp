@@ -11,7 +11,7 @@ struct Scene {
 	// 	SCENE_MENU,
 	// };
 
-	static const  int TSIZE = 16;
+	static const  int TSIZE = 8;
 	static inline int tilesetimage = 0, playerimage = 0;
 	// static inline GAMESCENE currentscene = SCENE_TITLE, toscene = SCENE_TITLE;
 	static inline DPad dpad;
