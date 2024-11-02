@@ -14,7 +14,7 @@ struct EnemySentry {
 		enemyid = gfx->makesprite( Scene::tilesetimage, TSIZE, TSIZE );
 		auto& enemy = gfx->getsprite( enemyid );
 		enemy.src.x = TSIZE * 4;
-		enemy.pos.x = rand() % Scene::SCENEW;
+		enemy.pos.x = 2 + ( rand() % (Scene::SCENEW - TSIZE - 4) );
 		enemy.pos.y = -TSIZE;
 	}
 
