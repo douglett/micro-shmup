@@ -80,18 +80,25 @@ struct StarField : Scene {
 struct EnemySentry {
 	static const int TSIZE = Scene::TSIZE, ENEMY_SPEED = 1, ANIM_TT = 30;
 	GFX::Scene* gfx = NULL;
-	int enemyid = 0, alive = true, animtt = 0, anim = ANIM_TT;
+	int spriteid = 0, alive = true, animtt = 0, anim = ANIM_TT;
 
-	EnemySentry(GFX::Scene& gfxref) : gfx(&gfxref) {
-		enemyid = gfx->makesprite( Scene::tilesetimage, TSIZE, TSIZE );
-		auto& enemy = gfx->getsprite( enemyid );
+	void make(GFX::Scene& gfxref) {
+		gfx = &gfxref;
+		spriteid = gfx->makesprite( Scene::tilesetimage, TSIZE, TSIZE );
+		auto& enemy = gfx->getsprite( spriteid );
 		enemy.src.x = TSIZE * 4;
 		enemy.pos.x = 2 + ( rand() % (Scene::SCENEW - TSIZE - 4) );
 		enemy.pos.y = -TSIZE;
 	}
 
+	void free() {
+		if (!gfx) return;
+		gfx->freesprite( spriteid );
+	}
+
 	void update() {
-		auto& enemy = gfx->getsprite( enemyid );
+		if (!gfx) return;
+		auto& enemy = gfx->getsprite( spriteid );
 		enemy.pos.y += ENEMY_SPEED;
 		if (enemy.pos.y > Scene::SCENEH)
 			alive = false;
@@ -115,7 +122,7 @@ struct SceneGame : Scene {
 	vector<int> bullets;
 	int bulletcd = 0;
 	// enemys
-	vector<EnemySentry> sentrys;
+	map<int, EnemySentry> sentrys;
 	// interface
 	UIF uif = UIF(gfx);
 	StarField starfield;
@@ -157,7 +164,6 @@ struct SceneGame : Scene {
 		// spawn bullets
 		bulletcd = max( bulletcd - 1, 0 );
 		if (bulletcd == 0 && dpad.a > 0) {
-			// printf("spawn  %d  (%d)\n", (int)bullets.size(), gfx.pcounter);
 			bullets.push_back( gfx.makesprite( tilesetimage, 4, TSIZE ) );
 			auto& bullet = gfx.getsprite( bullets.back() );
 			bullet.src.x = TSIZE * 2;
@@ -168,14 +174,23 @@ struct SceneGame : Scene {
 		}
 
 		// move enemys
-		for (int i = sentrys.size() - 1; i >= 0; i--) {
-			sentrys[i].update();
-			if ( !sentrys[i].alive )
-				sentrys.erase( sentrys.begin() + i );
+		vector<int> dead;
+		for (auto [id, sentry] : sentrys) {
+			sentry.update();
+			if ( !sentry.alive )
+				dead.push_back( id );
 		}
+		for (int id : dead) {
+			sentrys[id].free();
+			sentrys.erase( id );
+		}
+
 		// spawn enemys
-		if (sentrys.size() < 10 && rand() % 10 == 0)
-			sentrys.push_back( EnemySentry( gfx ) );
+		if (sentrys.size() < 10 && rand() % 10 == 0) {
+			EnemySentry enemy;
+			enemy.make( gfx );
+			sentrys[enemy.spriteid] = enemy;
+		}
 	}
 
 	void drawscene() {
