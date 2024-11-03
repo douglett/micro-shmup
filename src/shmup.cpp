@@ -13,9 +13,9 @@ void update() {
 	game.update();
 }
 
-void paint() {
+void drawall() {
 	gfx.fill(0xff000000);
-	game.draw();
+	game.drawscene();
 	// gfx.blit( gfx.getimagegl(Scene::tilesetimage), 0, 100 );
 	gfx.print(sdl.fps, 144, 1);
 	sdl.flip(gfx.screen, Scene::dpad);
@@ -33,7 +33,7 @@ int main(int argc, char* args[]) {
 
 	while (!sdl.quit) {
 		update();
-		paint();
+		drawall();
 	}
 
 	sdl.close();

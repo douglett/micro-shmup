@@ -20,6 +20,62 @@ struct UIF : Scene {
 };
 
 
+// Stars
+struct StarField : Scene {
+	const float STAR_SMALL_SPEED = 0.3, STAR_LARGE_SPEED = 0.6;
+	GFX::Scene gfx;
+	int starimageid = 0;
+	vector<int> stars_small, stars_large;
+	float starsmalldy = 0, starlargedy = 0;
+	
+	StarField() {
+		srand(100);
+		// make star background image
+		starimageid = gfx.makeimage( 8, 8 );
+		auto& starimg = gfx.getimage( starimageid );
+		// make small stars
+		gfx.px( starimg, 0xff666666, 0, 0 );
+		for (int i = 0; i < 100; i++) {
+			int starid = gfx.makesprite( starimageid, 1, 1 );
+			stars_small.push_back( starid );
+			auto& spr = gfx.getsprite( starid );
+			spr.src.x = 0;
+			spr.pos.y = rand() % SCENEH;
+			spr.pos.x = 2 + ( rand() % (SCENEW - 4) );
+		}
+		// make large stars
+		gfx.px( starimg, 0xffffffff, 1, 0 );
+		for (int i = 0; i < 15; i++) {
+			int starid = gfx.makesprite( starimageid, 1, 1 );
+			stars_large.push_back( starid );
+			auto& spr = gfx.getsprite( starid );
+			spr.src.x = 1;
+			spr.pos.y = rand() % SCENEH;
+			spr.pos.x = 2 + ( rand() % (SCENEW - 4) );
+		}
+	}
+
+	void update() {
+		starsmalldy += STAR_SMALL_SPEED;
+		starlargedy += STAR_LARGE_SPEED;
+		for (int starid : stars_small) {
+			auto& starspr = gfx.getsprite( starid );
+			starspr.pos.y = ( starspr.pos.y + int(starsmalldy) ) % SCENEH;
+		}
+		for (int starid : stars_large) {
+			auto& starspr = gfx.getsprite( starid );
+			starspr.pos.y = ( starspr.pos.y + int(starlargedy) ) % SCENEH;
+		}
+		starsmalldy -= int(starsmalldy);
+		starlargedy -= int(starlargedy);
+	}
+
+	void drawscene() {
+		gfx.drawscene();
+	}
+};
+
+
 // Enemys
 struct EnemySentry {
 	static const int TSIZE = Scene::TSIZE, ENEMY_SPEED = 1, ANIM_TT = 30;
@@ -62,6 +118,7 @@ struct SceneGame : Scene {
 	vector<EnemySentry> sentrys;
 	// interface
 	UIF uif = UIF(gfx);
+	StarField starfield;
 
 	void init() {
 		shipspriteid = gfx.makesprite( tilesetimage, TSIZE, TSIZE );
@@ -71,6 +128,8 @@ struct SceneGame : Scene {
 	}
 
 	void update() {
+		starfield.update();
+
 		// move ship
 		auto& ship = gfx.getsprite( shipspriteid );
 		ship.pos.x = max( 1, min( SCENEW - ship.pos.w - 1, ship.pos.x + dpad.xaxis ) );
@@ -108,7 +167,8 @@ struct SceneGame : Scene {
 			sentrys.push_back( EnemySentry( gfx ) );
 	}
 
-	void draw() {
+	void drawscene() {
+		starfield.drawscene();
 		gfx.drawscene();
 	}
 };
