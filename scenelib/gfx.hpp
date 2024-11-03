@@ -67,7 +67,7 @@ struct GFX {
 	}
 
 	// collisions
-	static inline int collide_rect(const Rect& r1, const Rect& r2) {
+	static inline int colliderect(const Rect& r1, const Rect& r2) {
 		return !( r1.x + r1.w - 1 < r2.x 
 				|| r1.x > r2.x + r2.w - 1
 				|| r1.y + r1.h - 1 < r2.y 
@@ -221,20 +221,20 @@ struct GFX::Scene : GFX {
 	}
 
 	// collisions
-	int collide_sprite(const Rect& rect) {
+	int collidesprite(const Rect& rect) {
 		collisions_sprite = {};
 		for (const auto& [i, sprite] : sprites)
-			if (collide_rect(rect, sprite.hit))
+			if (colliderect(rect, sprite.hit))
 				collisions_sprite.push_back(i);
 		return collisions_sprite.size();
 	}
-	int collide_sprite(const Sprite& spr, int xoff=0, int yoff=0) {
+	int collidesprite(const Sprite& spr, int xoff=0, int yoff=0) {
 		collisions_sprite = {};
 		// Rect nextpos = { spr.pos.x + xoff, spr.pos.y + yoff, spr.pos.w, spr.pos.h };
 		Rect nextpos = { spr.pos.x + spr.hit.x + xoff, spr.pos.y + spr.hit.y + yoff, spr.hit.w, spr.hit.h };
 		for (const auto& [i, sprite] : sprites) {
 			Rect hit = { sprite.pos.x + sprite.hit.x, sprite.pos.y + sprite.hit.y, sprite.hit.w, sprite.hit.h };
-			if (&spr != &sprite && collide_rect(nextpos, hit))
+			if (&spr != &sprite && colliderect(nextpos, hit))
 				collisions_sprite.push_back(i);
 		}
 		return collisions_sprite.size();
@@ -249,7 +249,7 @@ struct GFX::Scene : GFX {
 		if (tmap.tsize <= 0)  return 0;
 		return mapat( tmap, x / tmap.tsize, y / tmap.tsize );
 	}
-	int collide_map(int dx, int dy) {
+	int collidemap(int dx, int dy) {
 		for (const auto& [i, tmap] : tilemaps) {
 			if (tmap.tsize <= 0)  continue;
 			if (mapatpx(tmap, dx, dy) < 0)
@@ -257,23 +257,23 @@ struct GFX::Scene : GFX {
 		}
 		return false;
 	}
-	int collide_map(const Rect& r) {
-		return collide_map(r.x, r.y)
-			|| collide_map(r.x + r.w - 1, r.y)
-			|| collide_map(r.x, r.y + r.h - 1)
-			|| collide_map(r.x + r.w - 1, r.y + r.h - 1);
+	int collidemap(const Rect& r) {
+		return collidemap(r.x, r.y)
+			|| collidemap(r.x + r.w - 1, r.y)
+			|| collidemap(r.x, r.y + r.h - 1)
+			|| collidemap(r.x + r.w - 1, r.y + r.h - 1);
 		// collisions_map = {};
 		// int coll[] = { r.x, r.y,   r.x+r.w-1, r.y,   r.x, r.y+r.h-1,   r.x+r.w-1, r.y+r.h-1 };
 		// for (int i = 0; i < 8; i++)
-		// 	if (collide_map( coll[i], coll[i+1] ))
-		// 		collide_map.push_back(tileat( coll[i], coll[i+1] ));
-		// return collide_map.size();
+		// 	if (collidemap( coll[i], coll[i+1] ))
+		// 		collidemap.push_back(tileat( coll[i], coll[i+1] ));
+		// return collidemap.size();
 	}
-	int collide_map(const Sprite& spr, int xoff=0, int yoff=0) {
-		return collide_map((Rect){ spr.pos.x + xoff, spr.pos.y + yoff, spr.pos.w, spr.pos.h });
+	int collidemap(const Sprite& spr, int xoff=0, int yoff=0) {
+		return collidemap((Rect){ spr.pos.x + xoff, spr.pos.y + yoff, spr.pos.w, spr.pos.h });
 	}
-	int collide_all(const Sprite& spr, int xoff=0, int yoff=0) {
-		return collide_map(spr, xoff, yoff) + collide_sprite(spr, xoff, yoff);
+	int collideall(const Sprite& spr, int xoff=0, int yoff=0) {
+		return collidemap(spr, xoff, yoff) + collidesprite(spr, xoff, yoff);
 	}
 
 	// draw scene

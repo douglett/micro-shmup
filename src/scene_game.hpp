@@ -132,17 +132,28 @@ struct SceneGame : Scene {
 
 		// move ship
 		auto& ship = gfx.getsprite( shipspriteid );
+		ship.z = 101;
 		ship.pos.x = max( 1, min( SCENEW - ship.pos.w - 1, ship.pos.x + dpad.xaxis ) );
 
 		// move bullets
 		for (int i = bullets.size() - 1; i >= 0; i--) {
 			auto& bullet = gfx.getsprite( bullets[i] );
 			bullet.pos.y -= BULLET_SPEED;
-			if (bullet.pos.y < -TSIZE) {
+			// offscreen collision
+			int collide = bullet.pos.y < -TSIZE;
+			// enemy collision
+			if (gfx.collidesprite( bullet )) {
+				collide++;
+				// TODO
+				printf("collide %d\n", gfx.collisions_sprite[0]);
+			}
+			// erase collided bullets
+			if (collide) {
 				gfx.freesprite( bullets[i] );
 				bullets.erase( bullets.begin() + i );
 			}
 		}
+
 		// spawn bullets
 		bulletcd = max( bulletcd - 1, 0 );
 		if (bulletcd == 0 && dpad.a > 0) {
