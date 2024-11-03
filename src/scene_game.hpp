@@ -175,7 +175,7 @@ struct SceneGame : Scene {
 
 		// move enemys
 		vector<int> dead;
-		for (auto [id, sentry] : sentrys) {
+		for (auto& [id, sentry] : sentrys) {
 			sentry.update();
 			if ( !sentry.alive )
 				dead.push_back( id );
