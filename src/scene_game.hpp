@@ -1,10 +1,26 @@
 #pragma once
 #include "global.hpp"
 #include <vector>
-// #include <functional>
 using namespace std;
 
 
+// User Interface
+struct UIF : Scene {
+	GFX::Scene& gfx;
+	int uifsprite = 0;
+
+	UIF(GFX::Scene& scene) : gfx(scene) {
+		uifsprite = gfx.makespriteimage( SCENEW, SCENEH );
+		auto& spr = gfx.getsprite( uifsprite );
+		spr.pos.x = SCENEW;
+		spr.z = 1000;
+		// paint ui
+		gfx.fill( gfx.getimage(spr.image), 0xff000022 );
+	}
+};
+
+
+// Enemys
 struct EnemySentry {
 	static const int TSIZE = Scene::TSIZE, ENEMY_SPEED = 1, ANIM_TT = 30;
 	GFX::Scene* gfx = NULL;
@@ -33,6 +49,7 @@ struct EnemySentry {
 };
 
 
+// Main Game scene 
 struct SceneGame : Scene {
 	// scene data
 	GFX::Scene gfx;
@@ -43,6 +60,8 @@ struct SceneGame : Scene {
 	int bulletcd = 0;
 	// enemys
 	vector<EnemySentry> sentrys;
+	// interface
+	UIF uif = UIF(gfx);
 
 	void init() {
 		shipspriteid = gfx.makesprite( tilesetimage, TSIZE, TSIZE );
