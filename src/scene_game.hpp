@@ -151,8 +151,11 @@ struct SceneGame : Scene {
 			// enemy collision
 			if (gfx.collidesprite( bullet )) {
 				collide++;
-				// TODO
-				printf("collide %d\n", gfx.collisions_sprite[0]);
+				for (int c : gfx.collisions_sprite)
+					if (sentrys.count(c)) {
+						sentrys[c].alive = 0;
+						break;
+					}
 			}
 			// erase collided bullets
 			if (collide) {
