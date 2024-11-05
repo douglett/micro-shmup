@@ -6,16 +6,20 @@ using namespace std;
 
 // User Interface
 struct UIF : Scene {
-	GFX::Scene& gfx;
+	GFX::Scene gfx;
 	int uifsprite = 0;
 
-	UIF(GFX::Scene& scene) : gfx(scene) {
+	void init() {
 		uifsprite = gfx.makespriteimage( SCENEW, SCENEH );
 		auto& spr = gfx.getsprite( uifsprite );
 		spr.pos.x = SCENEW;
 		spr.z = 1000;
 		// paint ui
 		gfx.fill( gfx.getimage(spr.image), 0xff000022 );
+	}
+
+	void drawscene() {
+		gfx.drawscene();
 	}
 };
 
@@ -28,7 +32,7 @@ struct StarField : Scene {
 	vector<int> stars_small, stars_large;
 	float starsmalldy = 0, starlargedy = 0;
 	
-	StarField() {
+	void init() {
 		srand(100);
 		// make star background image
 		starimageid = gfx.makeimage( 8, 8 );
@@ -77,18 +81,24 @@ struct StarField : Scene {
 
 
 // Enemys
-struct EnemySentry {
-	static const int TSIZE = Scene::TSIZE, ENEMY_SPEED = 1, ANIM_TT = 30;
-	GFX::Scene* gfx = NULL;
-	int spriteid = 0, alive = true, animtt = 0, anim = ANIM_TT;
+struct Enemy {
+	static const int TSIZE = Scene::TSIZE;
+	GFX::Scene* gfx;
+	int spriteid, alive;
+};
 
-	void make(GFX::Scene& gfxref) {
-		gfx = &gfxref;
+struct EnemySentry : Enemy {
+	static const int ENEMY_SPEED = 1, ANIM_TT = 30;
+	int animtt, anim;
+
+	void init() {
+		if (!gfx) return;
 		spriteid = gfx->makesprite( Scene::tilesetimage, TSIZE, TSIZE );
 		auto& enemy = gfx->getsprite( spriteid );
 		enemy.src.x = TSIZE * 4;
 		enemy.pos.x = 2 + ( rand() % (Scene::SCENEW - TSIZE - 4) );
 		enemy.pos.y = -TSIZE;
+		alive = true;
 	}
 
 	void free() {
@@ -102,11 +112,11 @@ struct EnemySentry {
 		enemy.pos.y += ENEMY_SPEED;
 		if (enemy.pos.y > Scene::SCENEH)
 			alive = false;
-		animtt--;
-		if (animtt <= 0) {
+		animtt++;
+		if (animtt >= ANIM_TT) {
 			anim = (anim + 1) % 2;
 			enemy.src.x = TSIZE * ( 4 + anim );
-			animtt = ANIM_TT;
+			animtt = 0;
 		}
 	}
 };
@@ -124,7 +134,7 @@ struct SceneGame : Scene {
 	// enemys
 	map<int, EnemySentry> sentrys;
 	// interface
-	UIF uif = UIF(gfx);
+	UIF uif;
 	StarField starfield;
 
 	void init() {
@@ -132,6 +142,8 @@ struct SceneGame : Scene {
 		auto& ship = gfx.getsprite( shipspriteid );
 		ship.pos.x = (SCENEW - ship.pos.w) / 2;
 		ship.pos.y = SCENEH - 16;
+		uif.init();
+		starfield.init();
 	}
 
 	void update() {
@@ -190,8 +202,8 @@ struct SceneGame : Scene {
 
 		// spawn enemys
 		if (sentrys.size() < 10 && rand() % 10 == 0) {
-			EnemySentry enemy;
-			enemy.make( gfx );
+			EnemySentry enemy = { &gfx };
+			enemy.init();
 			sentrys[enemy.spriteid] = enemy;
 		}
 	}
@@ -199,6 +211,7 @@ struct SceneGame : Scene {
 	void drawscene() {
 		starfield.drawscene();
 		gfx.drawscene();
+		uif.drawscene();
 	}
 };
 
