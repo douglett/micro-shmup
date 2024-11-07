@@ -1,6 +1,7 @@
 #pragma once
 #include "global.hpp"
 #include <vector>
+#include <cmath>
 using namespace std;
 
 
@@ -89,7 +90,7 @@ struct Enemy {
 
 struct EnemySentry : Enemy {
 	static const int ENEMY_SPEED = 1, ANIM_TT = 30;
-	int animtt, anim;
+	int animtt = 0, anim = 0;
 
 	void init() {
 		if (!gfx) return;
@@ -106,18 +107,51 @@ struct EnemySentry : Enemy {
 		gfx->freesprite( spriteid );
 	}
 
-	void update() {
-		if (!gfx) return;
-		auto& enemy = gfx->getsprite( spriteid );
-		enemy.pos.y += ENEMY_SPEED;
-		if (enemy.pos.y > Scene::SCENEH)
-			alive = false;
+	void animate(GFX::Sprite& enemy) {
 		animtt++;
 		if (animtt >= ANIM_TT) {
 			anim = (anim + 1) % 2;
 			enemy.src.x = TSIZE * ( 4 + anim );
 			animtt = 0;
 		}
+	}
+
+	void move(GFX::Sprite& enemy) {
+		enemy.pos.y += ENEMY_SPEED;
+	}
+
+	void update() {
+		if (!gfx) return;
+		auto& enemy = gfx->getsprite( spriteid );
+		animate( enemy );
+		move( enemy );
+		if (enemy.pos.y > Scene::SCENEH)
+			alive = false;
+	}
+};
+
+struct EnemySentryWobble : EnemySentry {
+	double x = 0, y = 0, xspeed = 0, yspeed = 1, xacc = 0.1;
+
+	void init() {
+		EnemySentry::init();
+		if (!gfx) return;
+		auto& enemy = gfx->getsprite( spriteid );
+		x = enemy.pos.x;
+		y = enemy.pos.y;
+	}
+
+	void move(GFX::Sprite& enemy) {
+		xspeed += xacc;
+		if (abs(xspeed) >= 1.0)  xspeed = -xspeed;
+		x += xspeed;
+		y += yspeed;
+		enemy.pos.x = round(x);
+		enemy.pos.y = round(y);
+	}
+
+	void update() {
+		EnemySentry::update();
 	}
 };
 
@@ -132,7 +166,7 @@ struct SceneGame : Scene {
 	vector<int> bullets;
 	int bulletcd = 0;
 	// enemys
-	map<int, EnemySentry> sentrys;
+	map<int, EnemySentryWobble> sentrys;
 	// interface
 	UIF uif;
 	StarField starfield;
@@ -202,7 +236,7 @@ struct SceneGame : Scene {
 
 		// spawn enemys
 		if (sentrys.size() < 10 && rand() % 10 == 0) {
-			EnemySentry enemy = { &gfx };
+			EnemySentryWobble enemy = { &gfx };
 			enemy.init();
 			sentrys[enemy.spriteid] = enemy;
 		}
