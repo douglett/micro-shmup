@@ -1,6 +1,5 @@
 #pragma once
 #include "global.hpp"
-#include "enemys.hpp"
 #include <vector>
 using namespace std;
 
@@ -91,8 +90,7 @@ struct SceneGame : Scene {
 	vector<int> bullets;
 	int bulletcd = 0;
 	// enemys
-	// map<int, EnemySentryWobble> sentrys;
-	EnemyGroup enemys = { gfx };
+	vector<int> enemys;
 	// interface
 	UIF uif;
 	StarField starfield;
@@ -124,7 +122,7 @@ struct SceneGame : Scene {
 			if (gfx.collidesprite( bullet )) {
 				collide++;
 				for (int c : gfx.collisions_sprite)
-					enemys.kill( c );
+					enemykill( c );
 			}
 			// erase collided bullets
 			if (collide) {
@@ -146,17 +144,46 @@ struct SceneGame : Scene {
 		}
 
 		// move enemys
-		enemys.update();
-		enemys.cleardead();
-		if (enemys.enemys.size() < 10 && rand() % 10 == 0) {
-			enemys.spawn( new EnemyGroup::SentryWobble() );
+		for (int i = enemys.size() - 1; i >= 0; i--) {
+			int enemyid = enemys[i];
+			if (enemyupdate( enemyid )) {
+				gfx.freesprite( enemyid );
+				enemys.erase( enemys.begin() + i );
+			}
 		}
+		// spawn new enemys
+		if (enemys.size() < 10 && rand() % 10 == 0)
+			enemys.push_back( enemymake() );
 	}
 
 	void drawscene() {
 		starfield.drawscene();
 		gfx.drawscene();
 		uif.drawscene();
+	}
+
+	int enemymake() {
+		int enemyid = gfx.makesprite( tilesetimage, TSIZE, TSIZE );
+		auto& enemy = gfx.getsprite( enemyid );
+		enemy.src.x = TSIZE * 4;
+		enemy.pos.x = 2 + ( rand() % (Scene::SCENEW - TSIZE - 4) );
+		enemy.pos.y = -TSIZE;
+		enemy.userdata.push_back( true );
+		return enemyid;
+	}
+
+	bool enemyupdate(int enemyid) {
+		// if (enemyid == 0)  return false;
+		auto& enemy = gfx.getsprite( enemyid );
+		enemy.pos.y += 1;
+		if (enemy.pos.y > SCENEH)
+			enemy.userdata[0] = false;
+		return !enemy.userdata[0];
+	}
+
+	void enemykill(int enemyid) {
+		auto& enemy = gfx.getsprite( enemyid );
+		enemy.userdata[0] = false;
 	}
 };
 

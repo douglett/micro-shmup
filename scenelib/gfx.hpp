@@ -13,6 +13,8 @@ struct GFX {
 	struct Sprite {
 		int image, visible, z;
 		Rect pos, src, hit, hurt;
+		int userid;
+		vector<char> userdata;
 	};
 	struct Tilemap {
 		int image, visible, z;
