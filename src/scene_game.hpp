@@ -1,7 +1,7 @@
 #pragma once
 #include "global.hpp"
+#include "enemys.hpp"
 #include <vector>
-#include <cmath>
 using namespace std;
 
 
@@ -81,81 +81,6 @@ struct StarField : Scene {
 };
 
 
-// Enemys
-struct Enemy {
-	static const int TSIZE = Scene::TSIZE;
-	GFX::Scene* gfx;
-	int spriteid, alive;
-};
-
-struct EnemySentry : Enemy {
-	static const int ENEMY_SPEED = 1, ANIM_TT = 30;
-	int animtt = 0, anim = 0;
-
-	void init() {
-		if (!gfx) return;
-		spriteid = gfx->makesprite( Scene::tilesetimage, TSIZE, TSIZE );
-		auto& enemy = gfx->getsprite( spriteid );
-		enemy.src.x = TSIZE * 4;
-		enemy.pos.x = 2 + ( rand() % (Scene::SCENEW - TSIZE - 4) );
-		enemy.pos.y = -TSIZE;
-		alive = true;
-	}
-
-	void free() {
-		if (!gfx) return;
-		gfx->freesprite( spriteid );
-	}
-
-	void animate(GFX::Sprite& enemy) {
-		animtt++;
-		if (animtt >= ANIM_TT) {
-			anim = (anim + 1) % 2;
-			enemy.src.x = TSIZE * ( 4 + anim );
-			animtt = 0;
-		}
-	}
-
-	void move(GFX::Sprite& enemy) {
-		enemy.pos.y += ENEMY_SPEED;
-	}
-
-	void update() {
-		if (!gfx) return;
-		auto& enemy = gfx->getsprite( spriteid );
-		animate( enemy );
-		move( enemy );
-		if (enemy.pos.y > Scene::SCENEH)
-			alive = false;
-	}
-};
-
-struct EnemySentryWobble : EnemySentry {
-	double x = 0, y = 0, xspeed = 0, yspeed = 1, xacc = 0.1;
-
-	void init() {
-		EnemySentry::init();
-		if (!gfx) return;
-		auto& enemy = gfx->getsprite( spriteid );
-		x = enemy.pos.x;
-		y = enemy.pos.y;
-	}
-
-	void move(GFX::Sprite& enemy) {
-		xspeed += xacc;
-		if (abs(xspeed) >= 1.0)  xspeed = -xspeed;
-		x += xspeed;
-		y += yspeed;
-		enemy.pos.x = round(x);
-		enemy.pos.y = round(y);
-	}
-
-	void update() {
-		EnemySentry::update();
-	}
-};
-
-
 // Main Game scene 
 struct SceneGame : Scene {
 	// scene data
@@ -166,7 +91,8 @@ struct SceneGame : Scene {
 	vector<int> bullets;
 	int bulletcd = 0;
 	// enemys
-	map<int, EnemySentryWobble> sentrys;
+	// map<int, EnemySentryWobble> sentrys;
+	EnemyGroup enemys = { gfx };
 	// interface
 	UIF uif;
 	StarField starfield;
@@ -198,10 +124,7 @@ struct SceneGame : Scene {
 			if (gfx.collidesprite( bullet )) {
 				collide++;
 				for (int c : gfx.collisions_sprite)
-					if (sentrys.count(c)) {
-						sentrys[c].alive = 0;
-						break;
-					}
+					enemys.kill( c );
 			}
 			// erase collided bullets
 			if (collide) {
@@ -223,22 +146,10 @@ struct SceneGame : Scene {
 		}
 
 		// move enemys
-		vector<int> dead;
-		for (auto& [id, sentry] : sentrys) {
-			sentry.update();
-			if ( !sentry.alive )
-				dead.push_back( id );
-		}
-		for (int id : dead) {
-			sentrys[id].free();
-			sentrys.erase( id );
-		}
-
-		// spawn enemys
-		if (sentrys.size() < 10 && rand() % 10 == 0) {
-			EnemySentryWobble enemy = { &gfx };
-			enemy.init();
-			sentrys[enemy.spriteid] = enemy;
+		enemys.update();
+		enemys.cleardead();
+		if (enemys.enemys.size() < 10 && rand() % 10 == 0) {
+			enemys.spawn( new EnemyGroup::SentryWobble() );
 		}
 	}
 
