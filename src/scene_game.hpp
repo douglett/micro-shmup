@@ -95,6 +95,7 @@ struct SceneGame : Scene {
 	// interface
 	UIF uif;
 	StarField starfield;
+	Effects::Fade fade;
 
 	void init() {
 		shipspriteid = gfx.makesprite( tilesetimage, TSIZE, TSIZE );
@@ -161,6 +162,8 @@ struct SceneGame : Scene {
 		starfield.drawscene();
 		gfx.drawscene();
 		uif.drawscene();
+		// fade.fade( 0.5 );
+		fade.multiply( 0xff7777 );
 	}
 
 	struct SentryData { char alive; };

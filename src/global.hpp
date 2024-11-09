@@ -2,6 +2,7 @@
 #include "scenelib/sdl.hpp"
 #include "scenelib/gfx.hpp"
 #include "scenelib/dpad.hpp"
+#include "scenelib/effects.hpp"
 
 
 struct Scene {

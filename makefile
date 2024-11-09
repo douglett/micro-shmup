@@ -1,6 +1,6 @@
 OUT  = sokoban.exe
 SRC  = src/shmup.cpp
-HEAD = scenelib/sdl.hpp scenelib/gfx.hpp scenelib/dpad.hpp \
+HEAD = scenelib/sdl.hpp scenelib/gfx.hpp scenelib/dpad.hpp scenelib/effects.hpp \
 		src/global.hpp src/scene_game.hpp src/enemys.hpp
 
 
