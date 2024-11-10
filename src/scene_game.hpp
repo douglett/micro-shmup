@@ -6,13 +6,13 @@ using namespace std;
 
 
 // User Interface
-struct UIF : Scene {
+struct Interface : Scene {
 	GFX::Scene gfx;
-	int uifsprite = 0;
+	int ifsprite = 0;
 
 	void init() {
-		uifsprite = gfx.makespriteimage( SCENEW, SCENEH );
-		auto& spr = gfx.getsprite( uifsprite );
+		ifsprite = gfx.makespriteimage( SCENEW, SCENEH );
+		auto& spr = gfx.getsprite( ifsprite );
 		spr.pos.x = SCENEW;
 		spr.z = 1000;
 		// paint ui
@@ -92,18 +92,18 @@ struct SceneGame : Scene {
 	int bulletcd = 0;
 	// enemys
 	vector<int> enemys;
-	// interface
-	UIF uif;
+	// effects & interface
 	StarField starfield;
-	Effects::Fade fade;
+	// Effects::Fade fade;
+	Interface interface;
 
 	void init() {
 		shipspriteid = gfx.makesprite( tilesetimage, TSIZE, TSIZE );
 		auto& ship = gfx.getsprite( shipspriteid );
 		ship.pos.x = (SCENEW - ship.pos.w) / 2;
 		ship.pos.y = SCENEH - 16;
-		uif.init();
 		starfield.init();
+		interface.init();
 	}
 
 	void update() {
@@ -161,9 +161,7 @@ struct SceneGame : Scene {
 	void drawscene() {
 		starfield.drawscene();
 		gfx.drawscene();
-		uif.drawscene();
-		// fade.fade( 0.5 );
-		fade.multiply( 0xff7777 );
+		interface.drawscene();
 	}
 
 	struct SentryData { char alive; };
