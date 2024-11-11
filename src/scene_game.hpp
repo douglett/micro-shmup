@@ -92,11 +92,10 @@ struct SceneGame : Scene {
 	vector<int> bullets;
 	int bulletcd = 0;
 	// enemys
-	// vector<int> enemys;
-	Wave1 wave = { gfx };
+	Wave1 wave = { { gfx } };
 	// effects & interface
 	StarField starfield;
-	// Effects::Fade fade;
+	Effects::Fade fade;
 	Interface interface;
 
 
@@ -127,9 +126,7 @@ struct SceneGame : Scene {
 			if (gfx.collidesprite( bullet )) {
 				collide++;
 				for (int c : gfx.collisions_sprite)
-					// enemykill( c );
 					wave.kill( c );
-					// ;
 			}
 			// erase collided bullets
 			if (collide) {
@@ -151,16 +148,6 @@ struct SceneGame : Scene {
 		}
 
 		// move enemys
-		// for (int i = enemys.size() - 1; i >= 0; i--) {
-		// 	int enemyid = enemys[i];
-		// 	if (enemyupdate( enemyid )) {
-		// 		gfx.freesprite( enemyid );
-		// 		enemys.erase( enemys.begin() + i );
-		// 	}
-		// }
-		// // spawn new enemys
-		// if (enemys.size() < 10 && rand() % 10 == 0)
-		// 	enemys.push_back( enemymake_wobble() );
 		wave.update();
 	}
 
@@ -169,65 +156,6 @@ struct SceneGame : Scene {
 		gfx.drawscene();
 		interface.drawscene();
 	}
-
-	// struct SentryData { char alive; };
-	// int enemymake() {
-	// 	int enemyid = gfx.makesprite( tilesetimage, TSIZE, TSIZE );
-	// 	auto& enemy = gfx.getsprite( enemyid );
-	// 	enemy.src.x = TSIZE * 4;
-	// 	enemy.pos.x = 2 + ( rand() % (Scene::SCENEW - TSIZE - 4) );
-	// 	enemy.pos.y = -TSIZE;
-	// 	// enemy data
-	// 	enemy.usertype = 1;
-	// 	// enemy.userdata.push_back( true );
-	// 	enemy.userdata.resize( sizeof(SentryData) );
-	// 	auto& data = (SentryData&)enemy.userdata[0];
-	// 	data.alive = true;
-	// 	return enemyid;
-	// }
-
-	// struct SentryWobbleData : SentryData { double x, y, xspeed, yspeed, xacc; };
-	// int enemymake_wobble() {
-	// 	int enemyid = enemymake();
-	// 	auto& enemy = gfx.getsprite( enemyid );
-	// 	// enemy data
-	// 	enemy.usertype = 2;
-	// 	enemy.userdata.resize( sizeof(SentryWobbleData) );
-	// 	auto& data = (SentryWobbleData&)enemy.userdata[0];
-	// 	data.x = enemy.pos.x;
-	// 	data.y = enemy.pos.y;
-	// 	data.yspeed = 1;
-	// 	data.xacc = 0.07;
-	// 	return enemyid;
-	// }
-
-	// bool enemyupdate(int enemyid) {
-	// 	auto& enemy = gfx.getsprite( enemyid );
-	// 	auto& data = (SentryData&)enemy.userdata[0];
-	// 	// straight down enemy
-	// 	if (enemy.usertype == 1) {
-	// 		enemy.pos.y += 1;
-	// 	}
-	// 	// wobble enemy
-	// 	if (enemy.usertype == 2) {
-	// 		auto& data = (SentryWobbleData&)enemy.userdata[0];
-	// 		data.xspeed += data.xacc;
-	// 		if (abs(data.xspeed) >= 1.0)  data.xacc = -data.xacc;
-	// 		data.x += data.xspeed;
-	// 		data.y += data.yspeed;
-	// 		enemy.pos.x = round(data.x);
-	// 		enemy.pos.y = round(data.y);
-	// 	}
-	// 	// check offscreen, return true if dead
-	// 	if (enemy.pos.y > SCENEH)
-	// 		data.alive = false;
-	// 	return !data.alive;
-	// }
-
-	// void enemykill(int enemyid) {
-	// 	auto& enemy = gfx.getsprite( enemyid );
-	// 	enemy.userdata[0] = false;
-	// }
 };
 
 extern SceneGame game;
