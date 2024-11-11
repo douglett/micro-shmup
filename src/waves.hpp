@@ -7,13 +7,13 @@ struct Wave {
 		ENEMY_ORB = 200,
 		ENEMY_WOBBLEORB = 201,
 	};
-	struct SentryData { char alive; };
+	struct SentryData { int anim, frameoffset; };
 	struct SentryWobbleData : SentryData { double x, y, xspeed, yspeed, xacc; };
 
 	static const int TSIZE = Scene::TSIZE;
 	GFX::Scene& gfx;
 	vector<int> enemys;
-	int delta = 0;
+	int delta = 0, wave = 0;
 
 	void update() {
 		delta++;
@@ -63,12 +63,19 @@ struct Wave {
 
 	bool updateenemy(int enemyid) {
 		auto& enemy = gfx.getsprite( enemyid );
-		// straight down enemy
+		// animate orb
+		auto& data = (SentryData&)enemy.userdata[0];
+		data.anim++;
+		if (data.anim >= 30) {
+			data.frameoffset = (data.frameoffset + 1) % 2;
+			data.anim = 0;
+			enemy.src.x = TSIZE * (4 + data.frameoffset);
+		}
+		// straight down orb
 		if (enemy.usertype == ENEMY_ORB) {
-			// auto& data = (SentryData&)enemy.userdata[0];
 			enemy.pos.y += 1;
 		}
-		// wobble enemy
+		// wobble orb
 		if (enemy.usertype == ENEMY_WOBBLEORB) {
 			auto& data = (SentryWobbleData&)enemy.userdata[0];
 			data.xspeed += data.xacc;
@@ -89,25 +96,39 @@ struct Wave {
 struct Wave1 : Wave {
 	void update() {
 		Wave::update();
+		const int 
+			w1 = 0, w2 = 51, w3 = 200, wreset = 400,
+			interval1 = 15, interval3 = 20;
+
 		// spawn next enemy
 		switch (delta) {
-		case 1:
-		case 20:
-		case 40:
-		case 60:
-		case 80:
+		// first wave
+		case w1 + interval1 * 1:
+		case w1 + interval1 * 2:
+		case w1 + interval1 * 3:
+		case w1 + interval1 * 4:
+		case w1 + interval1 * 5:
 			makeorb( 15 );
 			break;
-		case 200:
-		case 215:
-		case 230:
-		case 245:
-		case 260:
-		case 275:
-		case 290:
-			makewobbleorb( (Scene::SCENEW - TSIZE) / 2 );
+		// second wave
+		case w2 + interval1 * 1:
+		case w2 + interval1 * 2:
+		case w2 + interval1 * 3:
+		case w2 + interval1 * 4:
+		case w2 + interval1 * 5:
+			makeorb( Scene::SCENEW - TSIZE - 15 );
 			break;
-		case 400:
+		// wobble wave
+		case w3 + interval3 * 1:
+		case w3 + interval3 * 2:
+		case w3 + interval3 * 3:
+		case w3 + interval3 * 4:
+		case w3 + interval3 * 5:
+		case w3 + interval3 * 6:
+		case w3 + interval3 * 7:
+			makewobbleorb( (Scene::SCENEW - TSIZE) / 2 - 5 );
+			break;
+		case wreset:
 			delta = 0;
 			break;
 		}
