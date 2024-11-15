@@ -7,8 +7,10 @@ struct Wave {
 		ENEMY_ORB = 200,
 		ENEMY_WOBBLEORB = 201,
 	};
-	struct SentryData { int anim, frameoffset; };
-	struct SentryWobbleData : SentryData { double x, y, xspeed, yspeed, xacc; };
+	struct EnemyData {
+		int anim, frameoffset;
+		double xspeed, yspeed, xacc;
+	};
 
 	static const int TSIZE = Scene::TSIZE;
 	GFX::Scene& gfx;
@@ -40,9 +42,9 @@ struct Wave {
 		enemy.pos.y = -TSIZE;
 		// enemy data
 		enemy.usertype = ENEMY_ORB;
-		enemy.userdata.resize( sizeof(SentryData) );
-		// auto& data = (SentryData&)enemy.userdata[0];
-		// data.alive = true;
+		enemy.userdata.resize( sizeof(EnemyData) );
+		auto& data = (EnemyData&)enemy.userdata[0];
+		data.yspeed = 1;
 		enemys.push_back( enemyid );
 		return enemyid;
 	}
@@ -52,11 +54,7 @@ struct Wave {
 		auto& enemy = gfx.getsprite( enemyid );
 		// enemy data
 		enemy.usertype = ENEMY_WOBBLEORB;
-		enemy.userdata.resize( sizeof(SentryWobbleData) );
-		auto& data = (SentryWobbleData&)enemy.userdata[0];
-		data.x = enemy.pos.x;
-		data.y = enemy.pos.y;
-		data.yspeed = 1;
+		auto& data = (EnemyData&)enemy.userdata[0];
 		data.xacc = 0.07;
 		return enemyid;
 	}
@@ -64,7 +62,7 @@ struct Wave {
 	bool updateenemy(int enemyid) {
 		auto& enemy = gfx.getsprite( enemyid );
 		// animate orb
-		auto& data = (SentryData&)enemy.userdata[0];
+		auto& data = (EnemyData&)enemy.userdata[0];
 		data.anim++;
 		if (data.anim >= 30) {
 			data.frameoffset = (data.frameoffset + 1) % 2;
@@ -73,17 +71,14 @@ struct Wave {
 		}
 		// straight down orb
 		if (enemy.usertype == ENEMY_ORB) {
-			enemy.pos.y += 1;
+			enemy.pos.y += data.yspeed;
 		}
 		// wobble orb
-		if (enemy.usertype == ENEMY_WOBBLEORB) {
-			auto& data = (SentryWobbleData&)enemy.userdata[0];
+		else if (enemy.usertype == ENEMY_WOBBLEORB) {
 			data.xspeed += data.xacc;
 			if (abs(data.xspeed) >= 1.0)  data.xacc = -data.xacc;
-			data.x += data.xspeed;
-			data.y += data.yspeed;
-			enemy.pos.x = round(data.x);
-			enemy.pos.y = round(data.y);
+			enemy.pos.x += data.xspeed;
+			enemy.pos.y += data.yspeed;
 		}
 		// check offscreen, return true if dead
 		if (enemy.pos.y > Scene::SCENEH)
