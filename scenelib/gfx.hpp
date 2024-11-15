@@ -22,7 +22,7 @@ struct GFX {
 	struct Tilemap {
 		int image, visible, z;
 		int tw, th, tsize;
-		Rect pos;
+		Rectfi pos;
 		vector<int> data;
 	};
 	struct Drawable { Tilemap* tmap; Sprite* sprite; int z; };
@@ -178,7 +178,7 @@ struct GFX::Scene : GFX {
 	map<int, Sprite>     sprites;
 	map<int, Tilemap>    tilemaps;
 	vector<int>          collisions_map, collisions_sprite;
-	Rect                 sceneoffset = { 0, 0 };
+	Rectfi               sceneoffset = { 0, 0 };
 
 	// make
 	int makeimage(int w, int h) {
@@ -310,9 +310,17 @@ struct GFX::Scene : GFX {
 				for (int y = 0; y < tmap.th; y++)
 				for (int x = 0; x < tmap.tw; x++) {
 					src.x = abs( tmap.data[ y * tmap.tw + x ] ) * tmap.tsize;
-					blit( getimage(tmap.image), sceneoffset.x + tmap.pos.x + x * tmap.tsize, sceneoffset.y + tmap.pos.y + y * tmap.tsize, src );
+					blit( getimage(tmap.image),
+						roundi( sceneoffset.x + tmap.pos.x + x * tmap.tsize ),
+						roundi( sceneoffset.y + tmap.pos.y + y * tmap.tsize ),
+						src
+					);
 					if (flag_hit && tmap.data[ y * tmap.tw + x ] < 0)
-						outline( 0xffff7700, { sceneoffset.x + tmap.pos.x + x * tmap.tsize, sceneoffset.y + tmap.pos.y + y * tmap.tsize, tmap.tsize, tmap.tsize } );
+						outline( 0xffff7700, {
+							roundi( sceneoffset.x + tmap.pos.x + x * tmap.tsize ),
+							roundi( sceneoffset.y + tmap.pos.y + y * tmap.tsize ),
+							tmap.tsize, tmap.tsize
+						} );
 				}
 			}
 			// draw sprites
