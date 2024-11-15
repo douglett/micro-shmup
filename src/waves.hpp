@@ -6,9 +6,10 @@ struct Wave {
 	enum ENEMY_T {
 		ENEMY_ORB = 200,
 		ENEMY_WOBBLEORB = 201,
+		ENEMY_GREEN_ALIEN = 202,
 	};
 	struct EnemyData {
-		int anim, frameoffset;
+		int anim, framebase, frameoffset;
 		double xspeed, yspeed, xacc;
 	};
 
@@ -37,7 +38,6 @@ struct Wave {
 		int enemyid = gfx.makesprite( Scene::tilesetimage, TSIZE, TSIZE );
 		auto& enemy = gfx.getsprite( enemyid );
 		enemy.src.x = TSIZE * 4;
-		// enemy.pos.x = 2 + ( rand() % (Scene::SCENEW - TSIZE - 4) );
 		enemy.pos.x = x;
 		enemy.pos.y = -TSIZE;
 		// enemy data
@@ -45,6 +45,7 @@ struct Wave {
 		enemy.userdata.resize( sizeof(EnemyData) );
 		auto& data = (EnemyData&)enemy.userdata[0];
 		data.yspeed = 1;
+		data.framebase = 4;
 		enemys.push_back( enemyid );
 		return enemyid;
 	}
@@ -59,15 +60,25 @@ struct Wave {
 		return enemyid;
 	}
 
+	int makegreenalien(int x) {
+		int enemyid = makeorb( x );
+		auto& enemy = gfx.getsprite( enemyid );
+		auto& data = (EnemyData&)enemy.userdata[0];
+		enemy.usertype = ENEMY_GREEN_ALIEN;
+		data.framebase = 6;
+		enemy.src.x = TSIZE * data.framebase;
+		return enemyid;
+	}
+
 	bool updateenemy(int enemyid) {
 		auto& enemy = gfx.getsprite( enemyid );
-		// animate orb
+		// animate between two frames
 		auto& data = (EnemyData&)enemy.userdata[0];
 		data.anim++;
 		if (data.anim >= 30) {
 			data.frameoffset = (data.frameoffset + 1) % 2;
 			data.anim = 0;
-			enemy.src.x = TSIZE * (4 + data.frameoffset);
+			enemy.src.x = TSIZE * (data.framebase + data.frameoffset);
 		}
 		// straight down orb
 		if (enemy.usertype == ENEMY_ORB) {
@@ -80,7 +91,21 @@ struct Wave {
 			enemy.pos.x += data.xspeed;
 			enemy.pos.y += data.yspeed;
 		}
-		// check offscreen, return true if dead
+		// green alien - go straight down then into a half-loop and return
+		else if (enemy.usertype == ENEMY_GREEN_ALIEN) {
+			if (enemy.pos.y > 116) {
+				data.yspeed -= 0.02;
+				if (enemy.pos.x < (Scene::SCENEW - TSIZE) / 2) 
+					data.xspeed += 0.02;
+				else
+					data.xspeed = max( data.xspeed - 0.02, 0.0 );
+			}
+			enemy.pos.x += data.xspeed;
+			enemy.pos.y += data.yspeed;
+			if (enemy.pos.y < -TSIZE * 2)
+				return true;
+		}
+		// check offscreen bottom, return true if dead
 		if (enemy.pos.y > Scene::SCENEH)
 			return true;
 		return false;
@@ -92,7 +117,7 @@ struct Wave1 : Wave {
 	void update() {
 		Wave::update();
 		const int 
-			w1 = 0, w2 = 51, w3 = 200, wreset = 400,
+			w1 = 0, w2 = 51, w3 = 200, w4 = 102, wreset = 400,
 			interval1 = 15, interval3 = 20;
 
 		// spawn next enemy
@@ -122,6 +147,11 @@ struct Wave1 : Wave {
 		case w3 + interval3 * 6:
 		case w3 + interval3 * 7:
 			makewobbleorb( (Scene::SCENEW - TSIZE) / 2 - 5 );
+			break;
+		case w4 + interval1 * 1:
+		case w4 + interval1 * 2:
+		case w4 + interval1 * 3:
+			makegreenalien( 15 );
 			break;
 		case wreset:
 			delta = 0;
