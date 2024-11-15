@@ -244,9 +244,9 @@ struct GFX::Scene : GFX {
 	}
 	int collidesprite(const Sprite& spr, double xoff=0, double yoff=0) {
 		collisions_sprite = {};
-		Rect nextpos = { roundi( spr.pos.x + spr.hit.x + xoff ), roundi( spr.pos.y + spr.hit.y + yoff ), spr.hit.w, spr.hit.h };
+		Rect nextpos = torect({ spr.pos.x + spr.hit.x + xoff, spr.pos.y + spr.hit.y + yoff, spr.hit.w, spr.hit.h });
 		for (const auto& [i, sprite] : sprites) {
-			Rect hit = { roundi( sprite.pos.x + sprite.hit.x ), roundi( sprite.pos.y + sprite.hit.y ), sprite.hit.w, sprite.hit.h };
+			Rect hit = torect({ sprite.pos.x + sprite.hit.x, sprite.pos.y + sprite.hit.y, sprite.hit.w, sprite.hit.h });
 			if (&spr != &sprite && colliderect(nextpos, hit))
 				collisions_sprite.push_back(i);
 		}
@@ -283,7 +283,7 @@ struct GFX::Scene : GFX {
 		// return collidemap.size();
 	}
 	int collidemap(const Sprite& spr, double xoff=0, double yoff=0) {
-		return collidemap((Rect){ roundi( spr.pos.x + xoff ), roundi( spr.pos.y + yoff ), spr.pos.w, spr.pos.h });
+		return collidemap(torect({ spr.pos.x + xoff, spr.pos.y + yoff, spr.pos.w, spr.pos.h }));
 	}
 	int collideall(const Sprite& spr, double xoff=0, double yoff=0) {
 		return collidemap(spr, xoff, yoff) + collidesprite(spr, xoff, yoff);
@@ -316,11 +316,11 @@ struct GFX::Scene : GFX {
 						src
 					);
 					if (flag_hit && tmap.data[ y * tmap.tw + x ] < 0)
-						outline( 0xffff7700, {
-							roundi( sceneoffset.x + tmap.pos.x + x * tmap.tsize ),
-							roundi( sceneoffset.y + tmap.pos.y + y * tmap.tsize ),
+						outline( 0xffff7700, torect({
+							sceneoffset.x + tmap.pos.x + x * tmap.tsize,
+							sceneoffset.y + tmap.pos.y + y * tmap.tsize,
 							tmap.tsize, tmap.tsize
-						} );
+						}) );
 				}
 			}
 			// draw sprites
@@ -332,17 +332,17 @@ struct GFX::Scene : GFX {
 				sprite.src.h = sprite.pos.h;
 				blit( getimage(sprite.image), sceneoffset.x + sprite.pos.x, sceneoffset.y + sprite.pos.y, sprite.src );
 				if (flag_hit)
-					outline( 0xffff0000, {
-						roundi( sceneoffset.x + sprite.pos.x + sprite.hit.x ),
-						roundi( sceneoffset.y + sprite.pos.y + sprite.hit.y ),
+					outline( 0xffff0000, torect({
+						sceneoffset.x + sprite.pos.x + sprite.hit.x,
+						sceneoffset.y + sprite.pos.y + sprite.hit.y,
 						sprite.hit.w, sprite.hit.h
-					} );
+					}) );
 				if (flag_hurt)
-					outline( 0xff00ff00, {
-						roundi( sceneoffset.x + sprite.pos.x + sprite.hurt.x ),
-						roundi( sceneoffset.y + sprite.pos.y + sprite.hurt.y ),
+					outline( 0xff00ff00, torect({
+						sceneoffset.x + sprite.pos.x + sprite.hurt.x,
+						sceneoffset.y + sprite.pos.y + sprite.hurt.y,
 						sprite.hurt.w, sprite.hurt.h
-					} );
+					}) );
 			}
 		}
 	}
