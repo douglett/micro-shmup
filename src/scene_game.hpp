@@ -32,7 +32,6 @@ struct StarField : Scene {
 	GFX::Scene gfx;
 	int starimageid = 0;
 	vector<int> stars_small, stars_large;
-	float starsmalldy = 0, starlargedy = 0;
 	
 	void init() {
 		srand(100);
@@ -62,18 +61,14 @@ struct StarField : Scene {
 	}
 
 	void update() {
-		starsmalldy += STAR_SMALL_SPEED;
-		starlargedy += STAR_LARGE_SPEED;
 		for (int starid : stars_small) {
 			auto& starspr = gfx.getsprite( starid );
-			starspr.pos.y = ( starspr.pos.y + int(starsmalldy) ) % SCENEH;
+			starspr.pos.y = fmod( starspr.pos.y + STAR_SMALL_SPEED, SCENEH );
 		}
 		for (int starid : stars_large) {
 			auto& starspr = gfx.getsprite( starid );
-			starspr.pos.y = ( starspr.pos.y + int(starlargedy) ) % SCENEH;
+			starspr.pos.y = fmod( starspr.pos.y + STAR_LARGE_SPEED, SCENEH );
 		}
-		starsmalldy -= int(starsmalldy);
-		starlargedy -= int(starlargedy);
 	}
 
 	void drawscene() {
@@ -114,7 +109,7 @@ struct SceneGame : Scene {
 		// move ship
 		auto& ship = gfx.getsprite( shipspriteid );
 		ship.z = 101;
-		ship.pos.x = max( 1, min( SCENEW - ship.pos.w - 1, ship.pos.x + dpad.xaxis ) );
+		ship.pos.x = max( 1.0, min( SCENEW - ship.pos.w - 1.0, ship.pos.x + dpad.xaxis ) );
 
 		// move bullets
 		for (int i = bullets.size() - 1; i >= 0; i--) {

@@ -4,15 +4,18 @@
 #include <map>
 #include <bitset>
 #include <algorithm>
+#include <cmath>
 using namespace std;
 
 struct GFX {
-	struct Rect  { int x, y, w, h; };
-	struct Rectf { double x, y, w, h; };
-	struct Image { int w, h; vector<uint32_t> data; };
+	struct Rect   { int x, y, w, h; };
+	struct Rectf  { double x, y, w, h; };
+	struct Rectfi { double x, y; int w, h; };
+	struct Image  { int w, h; vector<uint32_t> data; };
 	struct Sprite {
 		int image, visible, z;
-		Rect pos, src, hit, hurt;
+		Rect src, hit, hurt;
+		Rectfi pos;
 		int usertype;
 		vector<char> userdata;
 	};
@@ -66,6 +69,14 @@ struct GFX {
 	static Image& getimagegl(int ptr)  {
 		if (ptr <= 0 || !imagesgl.count(ptr))  throw runtime_error("Missing image: " + to_string(ptr));
 		return imagesgl.at(ptr);
+	}
+
+	// rects
+	static inline int roundi(double d) {
+		return (int)round(d);
+	}
+	static inline Rect torect(const Rectfi& r) {
+		return { roundi(r.x), roundi(r.y), r.w, r.h };
 	}
 
 	// collisions
@@ -182,7 +193,8 @@ struct GFX::Scene : GFX {
 		int ptr = pcounter++;
 		auto& spr = sprites[ptr] = {0};
 		spr.image = image;
-		spr.pos = spr.src = spr.hit = spr.hurt = { 0, 0, w, h };
+		spr.src = spr.hit = spr.hurt = { 0, 0, w, h };
+		spr.pos = { 0, 0, w, h };
 		spr.visible = true;
 		return ptr;
 	}
@@ -230,12 +242,11 @@ struct GFX::Scene : GFX {
 				collisions_sprite.push_back(i);
 		return collisions_sprite.size();
 	}
-	int collidesprite(const Sprite& spr, int xoff=0, int yoff=0) {
+	int collidesprite(const Sprite& spr, double xoff=0, double yoff=0) {
 		collisions_sprite = {};
-		// Rect nextpos = { spr.pos.x + xoff, spr.pos.y + yoff, spr.pos.w, spr.pos.h };
-		Rect nextpos = { spr.pos.x + spr.hit.x + xoff, spr.pos.y + spr.hit.y + yoff, spr.hit.w, spr.hit.h };
+		Rect nextpos = { roundi( spr.pos.x + spr.hit.x + xoff ), roundi( spr.pos.y + spr.hit.y + yoff ), spr.hit.w, spr.hit.h };
 		for (const auto& [i, sprite] : sprites) {
-			Rect hit = { sprite.pos.x + sprite.hit.x, sprite.pos.y + sprite.hit.y, sprite.hit.w, sprite.hit.h };
+			Rect hit = { roundi( sprite.pos.x + sprite.hit.x ), roundi( sprite.pos.y + sprite.hit.y ), sprite.hit.w, sprite.hit.h };
 			if (&spr != &sprite && colliderect(nextpos, hit))
 				collisions_sprite.push_back(i);
 		}
@@ -271,10 +282,10 @@ struct GFX::Scene : GFX {
 		// 		collidemap.push_back(tileat( coll[i], coll[i+1] ));
 		// return collidemap.size();
 	}
-	int collidemap(const Sprite& spr, int xoff=0, int yoff=0) {
-		return collidemap((Rect){ spr.pos.x + xoff, spr.pos.y + yoff, spr.pos.w, spr.pos.h });
+	int collidemap(const Sprite& spr, double xoff=0, double yoff=0) {
+		return collidemap((Rect){ roundi( spr.pos.x + xoff ), roundi( spr.pos.y + yoff ), spr.pos.w, spr.pos.h });
 	}
-	int collideall(const Sprite& spr, int xoff=0, int yoff=0) {
+	int collideall(const Sprite& spr, double xoff=0, double yoff=0) {
 		return collidemap(spr, xoff, yoff) + collidesprite(spr, xoff, yoff);
 	}
 
@@ -313,9 +324,17 @@ struct GFX::Scene : GFX {
 				sprite.src.h = sprite.pos.h;
 				blit( getimage(sprite.image), sceneoffset.x + sprite.pos.x, sceneoffset.y + sprite.pos.y, sprite.src );
 				if (flag_hit)
-					outline( 0xffff0000, { sceneoffset.x + sprite.pos.x + sprite.hit.x, sceneoffset.y + sprite.pos.y + sprite.hit.y, sprite.hit.w, sprite.hit.h } );
+					outline( 0xffff0000, {
+						roundi( sceneoffset.x + sprite.pos.x + sprite.hit.x ),
+						roundi( sceneoffset.y + sprite.pos.y + sprite.hit.y ),
+						sprite.hit.w, sprite.hit.h
+					} );
 				if (flag_hurt)
-					outline( 0xff00ff00, { sceneoffset.x + sprite.pos.x + sprite.hurt.x, sceneoffset.y + sprite.pos.y + sprite.hurt.y, sprite.hurt.w, sprite.hurt.h } );
+					outline( 0xff00ff00, {
+						roundi( sceneoffset.x + sprite.pos.x + sprite.hurt.x ),
+						roundi( sceneoffset.y + sprite.pos.y + sprite.hurt.y ),
+						sprite.hurt.w, sprite.hurt.h
+					} );
 			}
 		}
 	}
