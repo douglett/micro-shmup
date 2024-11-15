@@ -1,4 +1,4 @@
-OUT  = sokoban.exe
+OUT  = shmup.exe
 SRC  = src/shmup.cpp
 HEAD = scenelib/sdl.hpp scenelib/gfx.hpp scenelib/dpad.hpp scenelib/effects.hpp \
 		src/global.hpp src/scene_game.hpp src/waves.hpp
@@ -18,3 +18,6 @@ release: $(SRC) $(HEAD)
 
 run: $(OUT)
 	./$(OUT)
+
+clean:
+	rm -f *.out *.exe
