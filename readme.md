@@ -3,8 +3,10 @@ Shmup
 
 TODO:
 
-enemys
-	- wobble as alien (?)
-	- fly diagonally + zig-zag (yellow alien) - OK
-	- horizontal strafe and shoot (yellow ball)
-	- fly down + shoot 'shotgun' (red ball)
+game:
+	- add power-up on red kill
+		- add speed display to UI
+	- add explosions on deaths
+	- add player animations
+	- add 5 lives
+	- add invincibility frames on strike

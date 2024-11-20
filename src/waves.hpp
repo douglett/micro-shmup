@@ -17,14 +17,14 @@ struct Wave {
 		SPRITE_ALIEN_RED = 10,
 	};
 	struct EnemyData {
-		int anim, framebase, frameoffset;
+		int anim, framebase, frameoffset, health;
 		double xspeed, yspeed, xacc;
 	};
 
 	static const int TSIZE = Scene::TSIZE;
 	GFX::Scene& gfx;
 	vector<int> enemys;
-	int delta = 0, wave = 0;
+	int delta = 0, wave = 1;
 
 	void update() {
 		delta++;
@@ -36,10 +36,17 @@ struct Wave {
 
 	void kill(int enemyid) {
 		auto it = find( enemys.begin(), enemys.end(), enemyid );
-		if (it != enemys.end()) {
-			gfx.freesprite( enemyid );
-			enemys.erase( it );
-		}
+		if (it == enemys.end())  return;
+		// update enemy health
+		auto& enemy = gfx.getsprite( enemyid );
+		auto& data = (EnemyData&)enemy.userdata[0];
+		data.health--;
+		if (data.health > 0)  return;
+		// spawn explosion
+		// TODO
+		// erase
+		gfx.freesprite( enemyid );
+		enemys.erase( it );
 	}
 
 	int makeorb(int x) {
@@ -51,6 +58,7 @@ struct Wave {
 		enemy.usertype = ENEMY_ORB;
 		enemy.userdata.resize( sizeof(EnemyData) );
 		auto& data = (EnemyData&)enemy.userdata[0];
+		data.health = wave;
 		data.yspeed = 1;
 		data.framebase = SPRITE_ORB_BLUE;
 		enemy.src.x = TSIZE * data.framebase;  // first frame
@@ -88,6 +96,18 @@ struct Wave {
 		enemy.usertype = ENEMY_ORB_YELLOW;
 		data.framebase = SPRITE_ORB_YELLOW;
 		data.xspeed = 1;
+		data.yspeed = 0.5;
+		return enemyid;
+	}
+
+	int makepowerup(int x) {
+		int enemyid = makeorb( x );
+		auto& enemy = gfx.getsprite( enemyid );
+		auto& data = (EnemyData&)enemy.userdata[0];
+		// set as yellow orb
+		enemy.usertype = ENEMY_ALIEN_RED;
+		data.framebase = SPRITE_ALIEN_RED;
+		data.xspeed = 2;
 		data.yspeed = 0.5;
 		return enemyid;
 	}
@@ -135,6 +155,17 @@ struct Wave {
 			enemy.pos.x += data.xspeed;
 			enemy.pos.y += data.yspeed;
 		}
+		// power-up - fly all over the place
+		else if (enemy.usertype == ENEMY_ALIEN_RED) {
+			if (enemy.pos.x <= 0)
+				data.xspeed = 1;
+			else if (enemy.pos.x >= Scene::SCENEW - TSIZE)
+				data.xspeed = -1;
+			else if (rand() % 5 == 0)
+				data.xspeed = -data.xspeed;
+			enemy.pos.x += data.xspeed;
+			enemy.pos.y += data.yspeed;
+		}
 		else {
 			printf("unknown enemy type: %d\n", enemy.usertype);
 		}
@@ -167,20 +198,27 @@ struct Wave1 : Wave {
 			if ( delta == start + frameoffset )
 				makezigzag( 15 );
 
+		// powerup alien
+		start = 300;
+		if ( delta == start )
+			makepowerup( rand() % (Scene::SCENEW - TSIZE) );
+
 		// wobbling orbs
-		start = 350;
+		start = 450;
 		for (int frameoffset : vector<int>{ 0, 20, 40, 60, 80, 100, 120 })
 			if ( delta == start + frameoffset )
 				makewobbleorb( (Scene::SCENEW - TSIZE) / 2 - 5 );
 
 		// green aliens - out then boomerang back
-		start = 450;
+		start = 550;
 		for (int frameoffset : vector<int>{ 0, 15, 30 })
 			if ( delta == start + frameoffset )
 				makegreenalien( 15 );
 
 		// reset
-		if (delta >= 600)
+		if (delta >= 800) {
 			delta = 0;
+			wave++;
+		}
 	}
 };
