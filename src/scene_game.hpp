@@ -142,7 +142,7 @@ struct SceneGame : Scene {
 					// update score
 					switch ( (Wave::ENEMY_T) type ) {
 						case Wave::ENEMY_ORB:
-							score += 100;
+							score += 50;
 							break;
 						case Wave::ENEMY_ORB_WOBBLE:
 							score += 200;
