@@ -24,10 +24,13 @@ struct Interface : Scene {
 	void drawscene() {
 		auto& spr = gfx.getsprite( ifsprite );
 		auto& img = gfx.getimage( spr.image );
+		auto& tset = gfx.getimage( tilesetimage );
 		gfx.fill( img, 0xff000022 );
 		gfx.print( img, " level: " + to_string(level),    10, 10 );
 		gfx.print( img, "weapon: " + to_string(weapon),   10, 20 );
 		gfx.print( img, " score: " + to_string(score),    10, 30 );
+		for (int i = 0; i < lives; i++)
+			gfx.blit( img, tset, 10 + i * (TSIZE + 1), 40, { 0, 0, TSIZE, TSIZE } );
 
 		gfx.drawscene();
 	}
@@ -91,8 +94,9 @@ struct SceneGame : Scene {
 	GFX::Scene gfx;
 	int score = 0;
 	// ship data
+	const int SHIP_LIVES_MAX = 5, SHIP_INVULNERABLE_MAX = 90;
 	int shipspriteid = 0;
-	int shipalive = true;
+	int shiplives = SHIP_LIVES_MAX, shipinv = 0;
 	// bullet data
 	const int WEAPON_LEVEL_MAX = 5, WEAPON_CD_REDUCTION = 5, BULLET_CD = 25, BULLET_SPEED = 2;
 	vector<int> bullets;
@@ -120,11 +124,18 @@ struct SceneGame : Scene {
 		// move ship
 		auto& ship = gfx.getsprite( shipspriteid );
 		ship.z = 101;
-		if (shipalive) {
+		if (shiplives > 0) {
 			ship.pos.x = max( 1.0, min( SCENEW - ship.pos.w - 1.0, ship.pos.x + dpad.xaxis ) );
-			if (gfx.collidesprite( ship )) {
-				shipalive = false;
-				ship.visible = false;
+			if (shipinv == 0 && gfx.collidesprite( ship )) {
+				shiplives -= 1;
+				if (shiplives > 0)
+					shipinv = SHIP_INVULNERABLE_MAX;
+				else
+					ship.visible = false;
+			}
+			else if (shipinv > 0) {
+				shipinv--;
+				ship.visible = (shipinv / 5) % 2 == 0;
 			}
 		}
 
@@ -169,7 +180,7 @@ struct SceneGame : Scene {
 
 		// spawn bullets
 		bulletcd = max( bulletcd - 1, 0 );
-		if (shipalive && bulletcd == 0 && dpad.a > 0) {
+		if (shiplives > 0 && bulletcd == 0 && dpad.a > 0) {
 			bullets.push_back( gfx.makesprite( tilesetimage, 4, TSIZE ) );
 			auto& bullet = gfx.getsprite( bullets.back() );
 			bullet.src.x = TSIZE * 2;
@@ -186,6 +197,7 @@ struct SceneGame : Scene {
 		interface.level = wave.wave;
 		interface.weapon = weaponlvl;
 		interface.score = score;
+		interface.lives = shiplives;
 	}
 
 	void drawscene() {
