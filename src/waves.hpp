@@ -5,8 +5,16 @@
 struct Wave {
 	enum ENEMY_T {
 		ENEMY_ORB = 200,
-		ENEMY_WOBBLEORB = 201,
-		ENEMY_GREEN_ALIEN = 202,
+		ENEMY_ORB_WOBBLE,
+		ENEMY_ORB_YELLOW,
+		ENEMY_ALIEN_GREEN = 210,
+		ENEMY_ALIEN_RED,
+	};
+	enum ENEMY_SPRITE {
+		SPRITE_ORB_BLUE = 4,
+		SPRITE_ORB_YELLOW = 6,
+		SPRITE_ALIEN_GREEN = 8,
+		SPRITE_ALIEN_RED = 10,
 	};
 	struct EnemyData {
 		int anim, framebase, frameoffset;
@@ -37,7 +45,6 @@ struct Wave {
 	int makeorb(int x) {
 		int enemyid = gfx.makesprite( Scene::tilesetimage, TSIZE, TSIZE );
 		auto& enemy = gfx.getsprite( enemyid );
-		enemy.src.x = TSIZE * 4;
 		enemy.pos.x = x;
 		enemy.pos.y = -TSIZE;
 		// enemy data
@@ -45,7 +52,8 @@ struct Wave {
 		enemy.userdata.resize( sizeof(EnemyData) );
 		auto& data = (EnemyData&)enemy.userdata[0];
 		data.yspeed = 1;
-		data.framebase = 4;
+		data.framebase = SPRITE_ORB_BLUE;
+		enemy.src.x = TSIZE * data.framebase;
 		enemys.push_back( enemyid );
 		return enemyid;
 	}
@@ -54,9 +62,11 @@ struct Wave {
 		int enemyid = makeorb( x );
 		auto& enemy = gfx.getsprite( enemyid );
 		// enemy data
-		enemy.usertype = ENEMY_WOBBLEORB;
+		enemy.usertype = ENEMY_ORB_WOBBLE;
 		auto& data = (EnemyData&)enemy.userdata[0];
 		data.xacc = 0.07;
+		// data.framebase = SPRITE_ORB_BLUE;
+		// enemy.src.x = TSIZE * data.framebase;
 		return enemyid;
 	}
 
@@ -64,9 +74,22 @@ struct Wave {
 		int enemyid = makeorb( x );
 		auto& enemy = gfx.getsprite( enemyid );
 		auto& data = (EnemyData&)enemy.userdata[0];
-		enemy.usertype = ENEMY_GREEN_ALIEN;
-		data.framebase = 6;
+		enemy.usertype = ENEMY_ALIEN_GREEN;
+		data.framebase = SPRITE_ALIEN_GREEN;
 		enemy.src.x = TSIZE * data.framebase;
+		return enemyid;
+	}
+
+	int makezigzag(int x) {
+		int enemyid = makeorb( x );
+		auto& enemy = gfx.getsprite( enemyid );
+		// set as yellow orb
+		auto& data = (EnemyData&)enemy.userdata[0];
+		enemy.usertype = ENEMY_ORB_YELLOW;
+		data.framebase = SPRITE_ORB_YELLOW;
+		enemy.src.x = TSIZE * data.framebase;
+		data.xspeed = 0.5;
+		data.yspeed = 0.5;
 		return enemyid;
 	}
 
@@ -85,14 +108,14 @@ struct Wave {
 			enemy.pos.y += data.yspeed;
 		}
 		// wobble orb
-		else if (enemy.usertype == ENEMY_WOBBLEORB) {
+		else if (enemy.usertype == ENEMY_ORB_WOBBLE) {
 			data.xspeed += data.xacc;
 			if (abs(data.xspeed) >= 1.0)  data.xacc = -data.xacc;
 			enemy.pos.x += data.xspeed;
 			enemy.pos.y += data.yspeed;
 		}
 		// green alien - go straight down then into a half-loop and return
-		else if (enemy.usertype == ENEMY_GREEN_ALIEN) {
+		else if (enemy.usertype == ENEMY_ALIEN_GREEN) {
 			if (enemy.pos.y > 116) {
 				data.yspeed -= 0.02;
 				if (enemy.pos.x < (Scene::SCENEW - TSIZE) / 2) 
@@ -104,6 +127,9 @@ struct Wave {
 			enemy.pos.y += data.yspeed;
 			if (enemy.pos.y < -TSIZE * 2)
 				return true;
+		}
+		else {
+			printf("unknown enemy type: %d\n", enemy.usertype);
 		}
 		// check offscreen bottom, return true if dead
 		if (enemy.pos.y > Scene::SCENEH)
