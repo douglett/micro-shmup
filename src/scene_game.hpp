@@ -82,8 +82,10 @@ struct SceneGame : Scene {
 	// scene data
 	GFX::Scene gfx;
 	int shipspriteid = 0;
+	// ship data
+	int shipalive = true;
 	// bullet data
-	const int BULLET_CD = 7, BULLET_SPEED = 2;
+	const int BULLET_CD = 20, BULLET_SPEED = 2;
 	vector<int> bullets;
 	int bulletcd = 0;
 	// enemys
@@ -109,7 +111,13 @@ struct SceneGame : Scene {
 		// move ship
 		auto& ship = gfx.getsprite( shipspriteid );
 		ship.z = 101;
-		ship.pos.x = max( 1.0, min( SCENEW - ship.pos.w - 1.0, ship.pos.x + dpad.xaxis ) );
+		if (shipalive) {
+			ship.pos.x = max( 1.0, min( SCENEW - ship.pos.w - 1.0, ship.pos.x + dpad.xaxis ) );
+			if (gfx.collidesprite( ship )) {
+				shipalive = false;
+				ship.visible = false;
+			}
+		}
 
 		// move bullets
 		for (int i = bullets.size() - 1; i >= 0; i--) {
@@ -132,7 +140,7 @@ struct SceneGame : Scene {
 
 		// spawn bullets
 		bulletcd = max( bulletcd - 1, 0 );
-		if (bulletcd == 0 && dpad.a > 0) {
+		if (shipalive && bulletcd == 0 && dpad.a > 0) {
 			bullets.push_back( gfx.makesprite( tilesetimage, 4, TSIZE ) );
 			auto& bullet = gfx.getsprite( bullets.back() );
 			bullet.src.x = TSIZE * 2;

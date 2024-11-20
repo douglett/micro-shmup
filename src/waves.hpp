@@ -53,7 +53,7 @@ struct Wave {
 		auto& data = (EnemyData&)enemy.userdata[0];
 		data.yspeed = 1;
 		data.framebase = SPRITE_ORB_BLUE;
-		enemy.src.x = TSIZE * data.framebase;
+		enemy.src.x = TSIZE * data.framebase;  // first frame
 		enemys.push_back( enemyid );
 		return enemyid;
 	}
@@ -74,21 +74,20 @@ struct Wave {
 		int enemyid = makeorb( x );
 		auto& enemy = gfx.getsprite( enemyid );
 		auto& data = (EnemyData&)enemy.userdata[0];
+		// enemy data
 		enemy.usertype = ENEMY_ALIEN_GREEN;
 		data.framebase = SPRITE_ALIEN_GREEN;
-		enemy.src.x = TSIZE * data.framebase;
 		return enemyid;
 	}
 
 	int makezigzag(int x) {
 		int enemyid = makeorb( x );
 		auto& enemy = gfx.getsprite( enemyid );
-		// set as yellow orb
 		auto& data = (EnemyData&)enemy.userdata[0];
+		// set as yellow orb
 		enemy.usertype = ENEMY_ORB_YELLOW;
 		data.framebase = SPRITE_ORB_YELLOW;
-		enemy.src.x = TSIZE * data.framebase;
-		data.xspeed = 0.5;
+		data.xspeed = 1;
 		data.yspeed = 0.5;
 		return enemyid;
 	}
@@ -101,8 +100,9 @@ struct Wave {
 		if (data.anim >= 30) {
 			data.frameoffset = (data.frameoffset + 1) % 2;
 			data.anim = 0;
-			enemy.src.x = TSIZE * (data.framebase + data.frameoffset);
 		}
+		enemy.src.x = TSIZE * (data.framebase + data.frameoffset);
+
 		// straight down orb
 		if (enemy.usertype == ENEMY_ORB) {
 			enemy.pos.y += data.yspeed;
@@ -128,9 +128,17 @@ struct Wave {
 			if (enemy.pos.y < -TSIZE * 2)
 				return true;
 		}
+		// zig-zag - go back and forth
+		else if (enemy.usertype == ENEMY_ORB_YELLOW) {
+			if (enemy.pos.x <= 0 || enemy.pos.x >= Scene::SCENEW - TSIZE)
+				data.xspeed = -data.xspeed;
+			enemy.pos.x += data.xspeed;
+			enemy.pos.y += data.yspeed;
+		}
 		else {
 			printf("unknown enemy type: %d\n", enemy.usertype);
 		}
+
 		// check offscreen bottom, return true if dead
 		if (enemy.pos.y > Scene::SCENEH)
 			return true;
@@ -142,46 +150,37 @@ struct Wave {
 struct Wave1 : Wave {
 	void update() {
 		Wave::update();
-		const int 
-			w1 = 0, w2 = 51, w3 = 200, w4 = 102, wreset = 400,
-			interval1 = 15, interval3 = 20;
+		int start = 1;
 
-		// spawn next enemy
-		switch (delta) {
-		// first wave
-		case w1 + interval1 * 1:
-		case w1 + interval1 * 2:
-		case w1 + interval1 * 3:
-		case w1 + interval1 * 4:
-		case w1 + interval1 * 5:
-			makeorb( 15 );
-			break;
-		// second wave
-		case w2 + interval1 * 1:
-		case w2 + interval1 * 2:
-		case w2 + interval1 * 3:
-		case w2 + interval1 * 4:
-		case w2 + interval1 * 5:
-			makeorb( Scene::SCENEW - TSIZE - 15 );
-			break;
-		// wobble wave
-		case w3 + interval3 * 1:
-		case w3 + interval3 * 2:
-		case w3 + interval3 * 3:
-		case w3 + interval3 * 4:
-		case w3 + interval3 * 5:
-		case w3 + interval3 * 6:
-		case w3 + interval3 * 7:
-			makewobbleorb( (Scene::SCENEW - TSIZE) / 2 - 5 );
-			break;
-		case w4 + interval1 * 1:
-		case w4 + interval1 * 2:
-		case w4 + interval1 * 3:
-			makegreenalien( 15 );
-			break;
-		case wreset:
+		// 2x rows of straight down orbs
+		start = 1;
+		for (int frameoffset : vector<int>{ 0, 15, 30, 45, 60 })
+			if ( delta == start + frameoffset )
+				makeorb( 15 );
+		for (int frameoffset : vector<int>{ 0, 15, 30, 45, 60 })
+			if ( delta == start + 50 + frameoffset )
+				makeorb( Scene::SCENEW - TSIZE - 15 );
+
+		// zig-zag orbs
+		start = 150;
+		for (int frameoffset : vector<int>{ 0, 15, 30, 45 })
+			if ( delta == start + frameoffset )
+				makezigzag( 15 );
+
+		// wobbling orbs
+		start = 350;
+		for (int frameoffset : vector<int>{ 0, 20, 40, 60, 80, 100, 120 })
+			if ( delta == start + frameoffset )
+				makewobbleorb( (Scene::SCENEW - TSIZE) / 2 - 5 );
+
+		// green aliens - out then boomerang back
+		start = 450;
+		for (int frameoffset : vector<int>{ 0, 15, 30 })
+			if ( delta == start + frameoffset )
+				makegreenalien( 15 );
+
+		// reset
+		if (delta >= 600)
 			delta = 0;
-			break;
-		}
 	}
 };
