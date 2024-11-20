@@ -10,6 +10,7 @@ using namespace std;
 struct Interface : Scene {
 	GFX::Scene gfx;
 	int ifsprite = 0;
+	int level, weapon, score, lives;
 
 	void init() {
 		ifsprite = gfx.makespriteimage( SCENEW, SCENEH );
@@ -21,6 +22,13 @@ struct Interface : Scene {
 	}
 
 	void drawscene() {
+		auto& spr = gfx.getsprite( ifsprite );
+		auto& img = gfx.getimage( spr.image );
+		gfx.fill( img, 0xff000022 );
+		gfx.print( img, " level: " + to_string(level),    10, 10 );
+		gfx.print( img, "weapon: " + to_string(weapon),   10, 20 );
+		gfx.print( img, " score: " + to_string(score),    10, 30 );
+
 		gfx.drawscene();
 	}
 };
@@ -81,13 +89,14 @@ struct StarField : Scene {
 struct SceneGame : Scene {
 	// scene data
 	GFX::Scene gfx;
-	int shipspriteid = 0;
+	int score = 0;
 	// ship data
+	int shipspriteid = 0;
 	int shipalive = true;
 	// bullet data
-	const int BULLET_CD = 20, BULLET_SPEED = 2;
+	const int WEAPON_LEVEL_MAX = 5, WEAPON_CD_REDUCTION = 5, BULLET_CD = 25, BULLET_SPEED = 2;
 	vector<int> bullets;
-	int bulletcd = 0;
+	int weaponlvl = 1, bulletcd = 0;
 	// enemys
 	Wave1 wave = { { gfx } };
 	// effects & interface
@@ -128,8 +137,28 @@ struct SceneGame : Scene {
 			// enemy collision
 			if (gfx.collidesprite( bullet )) {
 				collide++;
-				for (int c : gfx.collisions_sprite)
-					wave.kill( c );
+				for (int c : gfx.collisions_sprite) {
+					int type = wave.kill( c );
+					// update score
+					switch ( (Wave::ENEMY_T) type ) {
+						case Wave::ENEMY_ORB:
+							score += 100;
+							break;
+						case Wave::ENEMY_ORB_WOBBLE:
+							score += 200;
+							break;
+						case Wave::ENEMY_ORB_YELLOW:
+							score += 150;
+							break;
+						case Wave::ENEMY_ALIEN_GREEN:
+							score += 300;
+							break;
+						case Wave::ENEMY_ALIEN_RED:
+							weaponlvl = min( weaponlvl + 1, WEAPON_LEVEL_MAX );  // if we killed a red alien, improve weapon shoot speed
+							score += 1000;
+							break;
+					}
+				}
 			}
 			// erase collided bullets
 			if (collide) {
@@ -147,11 +176,16 @@ struct SceneGame : Scene {
 			bullet.pos.x = ship.pos.x + 2;
 			bullet.pos.y = ship.pos.y - TSIZE - 1;
 			bullet.z = 100;
-			bulletcd = BULLET_CD;
+			bulletcd = BULLET_CD - ( WEAPON_CD_REDUCTION * (weaponlvl - 1) );
 		}
 
 		// move enemys
 		wave.update();
+
+		// update interface
+		interface.level = wave.wave;
+		interface.weapon = weaponlvl;
+		interface.score = score;
 	}
 
 	void drawscene() {

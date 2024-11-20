@@ -34,19 +34,21 @@ struct Wave {
 				enemys.erase( enemys.begin() + i );
 	}
 
-	void kill(int enemyid) {
+	int kill(int enemyid) {
 		auto it = find( enemys.begin(), enemys.end(), enemyid );
-		if (it == enemys.end())  return;
+		if (it == enemys.end())  return 0;
 		// update enemy health
 		auto& enemy = gfx.getsprite( enemyid );
 		auto& data = (EnemyData&)enemy.userdata[0];
 		data.health--;
-		if (data.health > 0)  return;
+		if (data.health > 0)  return 0;
 		// spawn explosion
 		// TODO
 		// erase
+		int type = enemy.usertype;
 		gfx.freesprite( enemyid );
 		enemys.erase( it );
+		return type;
 	}
 
 	int makeorb(int x) {
