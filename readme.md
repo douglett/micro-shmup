@@ -1,9 +1,12 @@
-Shmup
-=====
+Micro-Shmup
+===========
+
+Top-scrolling space shooter micro-game.
+
+(Description here.)
 
 TODO:
-
-game:
+-----
 	- add power-up on red kill - OK
 		- add speed display to UI - OK
 	- add score - OK
