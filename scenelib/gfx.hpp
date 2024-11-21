@@ -81,10 +81,11 @@ struct GFX {
 
 	// collisions
 	static inline int colliderect(const Rect& r1, const Rect& r2) {
-		return !( r1.x + r1.w - 1 < r2.x 
-				|| r1.x > r2.x + r2.w - 1
-				|| r1.y + r1.h - 1 < r2.y 
-				|| r1.y > r2.y + r2.h - 1 );
+		return r1.w > 0 && r1.h > 0 && r2.w > 0 && r2.h > 0 &&
+			!( r1.x + r1.w - 1 < r2.x 
+			|| r1.x > r2.x + r2.w - 1
+			|| r1.y + r1.h - 1 < r2.y 
+			|| r1.y > r2.y + r2.h - 1 );
 	}
 
 	// single pixel
