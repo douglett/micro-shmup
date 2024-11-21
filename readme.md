@@ -9,6 +9,7 @@ game:
 	- add score - OK
 	- add 5 lives - OK
 	- add invincibility frames on strike - OK
-	- add game restart
+	- add game restart - OK
 	- add explosions on deaths
 	- add player animations
+	- new weapons

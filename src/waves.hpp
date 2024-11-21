@@ -26,6 +26,15 @@ struct Wave {
 	vector<int> enemys;
 	int delta = 0, wave = 1;
 
+	void reset() {
+		// clear enemys
+		for (int e : enemys)
+			gfx.freesprite( e );
+		enemys = {};
+		// reset counters
+		delta = 0, wave = 1;
+	}
+
 	void update() {
 		delta++;
 		// move enemys
@@ -75,8 +84,6 @@ struct Wave {
 		enemy.usertype = ENEMY_ORB_WOBBLE;
 		auto& data = (EnemyData&)enemy.userdata[0];
 		data.xacc = 0.07;
-		// data.framebase = SPRITE_ORB_BLUE;
-		// enemy.src.x = TSIZE * data.framebase;
 		return enemyid;
 	}
 

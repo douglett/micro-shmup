@@ -10,6 +10,7 @@ using namespace std;
 struct Interface : Scene {
 	GFX::Scene gfx;
 	int ifsprite = 0;
+	int repaint = true;
 	int level, weapon, score, lives;
 
 	void init() {
@@ -17,20 +18,37 @@ struct Interface : Scene {
 		auto& spr = gfx.getsprite( ifsprite );
 		spr.pos.x = SCENEW;
 		spr.z = 1000;
-		// paint ui
-		gfx.fill( gfx.getimage(spr.image), 0xff000022 );
+	}
+
+	void updatevalues(int _level, int _weapon, int _score, int _lives) {
+		if (_level == level && _weapon == weapon && _score == score && _lives == lives)
+			return;
+		repaint = true;
+		level = _level;
+		weapon = _weapon;
+		score = _score;
+		lives = _lives;
 	}
 
 	void drawscene() {
-		auto& spr = gfx.getsprite( ifsprite );
-		auto& img = gfx.getimage( spr.image );
-		auto& tset = gfx.getimage( tilesetimage );
-		gfx.fill( img, 0xff000022 );
-		gfx.print( img, " level: " + to_string(level),    10, 10 );
-		gfx.print( img, "weapon: " + to_string(weapon),   10, 20 );
-		gfx.print( img, " score: " + to_string(score),    10, 30 );
-		for (int i = 0; i < lives; i++)
-			gfx.blit( img, tset, 10 + i * (TSIZE + 1), 40, { 0, 0, TSIZE, TSIZE } );
+		// repaint UI if score was updated
+		if (repaint) {
+			auto& spr = gfx.getsprite( ifsprite );
+			auto& img = gfx.getimage( spr.image );
+			auto& tset = gfx.getimage( tilesetimage );
+			gfx.fill( img, 0xff000022 );
+			repaint = false;
+			// score
+			gfx.print( img, " level: " + to_string(level),    10, 10 );
+			gfx.print( img, "weapon: " + to_string(weapon),   10, 20 );
+			gfx.print( img, " score: " + to_string(score),    10, 30 );
+			// lives
+			for (int i = 0; i < lives; i++)
+				gfx.blit( img, tset, 10 + i * (TSIZE + 1), 40, { 0, 0, TSIZE, TSIZE } );
+			// game over message
+			if (lives == 0)
+				gfx.print( img, "[ GAME OVER ]", 10, 80 );
+		}
 
 		gfx.drawscene();
 	}
@@ -96,7 +114,7 @@ struct SceneGame : Scene {
 	// ship data
 	const int SHIP_LIVES_MAX = 5, SHIP_INVULNERABLE_MAX = 90;
 	int shipspriteid = 0;
-	int shiplives = SHIP_LIVES_MAX, shipinv = 0;
+	int shiplives = 0, shipinv = 0;
 	// bullet data
 	const int WEAPON_LEVEL_MAX = 5, WEAPON_CD_REDUCTION = 5, BULLET_CD = 25, BULLET_SPEED = 2;
 	vector<int> bullets;
@@ -111,11 +129,26 @@ struct SceneGame : Scene {
 
 	void init() {
 		shipspriteid = gfx.makesprite( tilesetimage, TSIZE, TSIZE );
+		starfield.init();
+		interface.init();
+		reset();
+	}
+
+	void reset() {
+		// set ship position
 		auto& ship = gfx.getsprite( shipspriteid );
 		ship.pos.x = (SCENEW - ship.pos.w) / 2;
 		ship.pos.y = SCENEH - 16;
-		starfield.init();
-		interface.init();
+		ship.visible = true;
+		// clear any old game sprites 
+		for (int b : bullets)
+			gfx.freesprite( b );
+		bullets = {};
+		wave.reset();
+		// reset score & settings
+		score = 0;
+		shiplives = SHIP_LIVES_MAX, shipinv = 0;
+		weaponlvl = 1, bulletcd = 0;
 	}
 
 	void update() {
@@ -137,6 +170,9 @@ struct SceneGame : Scene {
 				shipinv--;
 				ship.visible = (shipinv / 5) % 2 == 0;
 			}
+		}
+		else if (dpad.b == dpad.KDOWN) {
+			reset();
 		}
 
 		// move bullets
@@ -194,10 +230,7 @@ struct SceneGame : Scene {
 		wave.update();
 
 		// update interface
-		interface.level = wave.wave;
-		interface.weapon = weaponlvl;
-		interface.score = score;
-		interface.lives = shiplives;
+		interface.updatevalues( wave.wave, weaponlvl, score, shiplives );
 	}
 
 	void drawscene() {
