@@ -47,7 +47,7 @@ struct Interface : Scene {
 				gfx.blit( img, tset, 10 + i * (TSIZE + 1), 40, { 0, 0, TSIZE, TSIZE } );
 			// game over message
 			if (lives == 0)
-				gfx.print( img, "[ GAME OVER ]", 10, 80 );
+				gfx.print( img, "[ GAME OVER ]", 14, 80 );
 		}
 
 		gfx.drawscene();
@@ -139,6 +139,7 @@ struct SceneGame : Scene {
 		auto& ship = gfx.getsprite( shipspriteid );
 		ship.pos.x = (SCENEW - ship.pos.w) / 2;
 		ship.pos.y = SCENEH - 16;
+		ship.z = 101;
 		ship.visible = true;
 		// clear any old game sprites 
 		for (int b : bullets)
@@ -156,21 +157,26 @@ struct SceneGame : Scene {
 
 		// move ship
 		auto& ship = gfx.getsprite( shipspriteid );
-		ship.z = 101;
+		// player alive - move and shoot
 		if (shiplives > 0) {
+			// move ship
 			ship.pos.x = max( 1.0, min( SCENEW - ship.pos.w - 1.0, ship.pos.x + dpad.xaxis ) );
+			ship.src.x = TSIZE * ( rand() % 5 == 0 );  // animate ships afterburners
+			// ship collision 
 			if (shipinv == 0 && gfx.collidesprite( ship )) {
 				shiplives -= 1;
 				if (shiplives > 0)
-					shipinv = SHIP_INVULNERABLE_MAX;
+					shipinv = SHIP_INVULNERABLE_MAX;  // start invulnerability phase
 				else
-					ship.visible = false;
+					ship.visible = false;  // dead - hide ship
 			}
+			// animate invulnerability
 			else if (shipinv > 0) {
 				shipinv--;
 				ship.visible = (shipinv / 5) % 2 == 0;
 			}
 		}
+		// player dead - press B (X) to respawn
 		else if (dpad.b == dpad.KDOWN) {
 			reset();
 		}
