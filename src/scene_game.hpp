@@ -210,6 +210,8 @@ struct SceneGame : Scene {
 							weaponlvl = min( weaponlvl + 1, WEAPON_LEVEL_MAX );  // if we killed a red alien, improve weapon shoot speed
 							score += 1000;
 							break;
+						case Wave::ENEMY_EXPLOSION:
+							break;  // can't destroy
 					}
 				}
 			}

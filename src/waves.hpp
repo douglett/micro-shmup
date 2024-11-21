@@ -9,15 +9,17 @@ struct Wave {
 		ENEMY_ORB_YELLOW,
 		ENEMY_ALIEN_GREEN = 210,
 		ENEMY_ALIEN_RED,
+		ENEMY_EXPLOSION = 300
 	};
 	enum ENEMY_SPRITE {
 		SPRITE_ORB_BLUE = 4,
 		SPRITE_ORB_YELLOW = 6,
 		SPRITE_ALIEN_GREEN = 8,
 		SPRITE_ALIEN_RED = 10,
+		SPRITE_EXPLOSION = 12,
 	};
 	struct EnemyData {
-		int anim, framebase, frameoffset, health;
+		int framebase, frameoffset, delta, health;
 		double xspeed, yspeed, xacc;
 	};
 
@@ -51,12 +53,13 @@ struct Wave {
 		auto& data = (EnemyData&)enemy.userdata[0];
 		data.health--;
 		if (data.health > 0)  return 0;
-		// spawn explosion
-		// TODO
 		// erase
-		int type = enemy.usertype;
+		int type = enemy.usertype, x = enemy.pos.x, y = enemy.pos.y;
 		gfx.freesprite( enemyid );
 		enemys.erase( it );
+		// spawn explosion
+		if (type != ENEMY_EXPLOSION)
+			makeexplosion( x, y );
 		return type;
 	}
 
@@ -65,6 +68,7 @@ struct Wave {
 		auto& enemy = gfx.getsprite( enemyid );
 		enemy.pos.x = x;
 		enemy.pos.y = -TSIZE;
+		enemy.z = 10;
 		// enemy data
 		enemy.usertype = ENEMY_ORB;
 		enemy.userdata.resize( sizeof(EnemyData) );
@@ -121,62 +125,87 @@ struct Wave {
 		return enemyid;
 	}
 
+	int makeexplosion(int x, int y) {
+		int enemyid = gfx.makesprite( Scene::tilesetimage, TSIZE, TSIZE );
+		auto& enemy = gfx.getsprite( enemyid );
+		enemy.userdata.resize( sizeof(EnemyData) );
+		auto& data = (EnemyData&)enemy.userdata[0];
+		enemy.pos.x = x;
+		enemy.pos.y = y;
+		enemy.z = 1;
+		enemy.hit = enemy.hurt = { 0 };
+		enemy.usertype = ENEMY_EXPLOSION;
+		data.framebase = SPRITE_EXPLOSION;
+		data.health = 1;
+		enemys.push_back( enemyid );
+		return enemyid;
+	}
+
 	bool updateenemy(int enemyid) {
 		auto& enemy = gfx.getsprite( enemyid );
 		// animate between two frames
 		auto& data = (EnemyData&)enemy.userdata[0];
-		data.anim++;
-		if (data.anim >= 30) {
+		data.delta++;
+		if (enemy.usertype != ENEMY_EXPLOSION && data.delta >= 30) {
 			data.frameoffset = (data.frameoffset + 1) % 2;
-			data.anim = 0;
+			data.delta = 0;
 		}
-		enemy.src.x = TSIZE * (data.framebase + data.frameoffset);
+		enemy.src.x = TSIZE * (data.framebase + data.frameoffset);  // update animation source
 
-		// straight down orb
-		if (enemy.usertype == ENEMY_ORB) {
-			enemy.pos.y += data.yspeed;
-		}
-		// wobble orb
-		else if (enemy.usertype == ENEMY_ORB_WOBBLE) {
-			data.xspeed += data.xacc;
-			if (abs(data.xspeed) >= 1.0)  data.xacc = -data.xacc;
-			enemy.pos.x += data.xspeed;
-			enemy.pos.y += data.yspeed;
-		}
-		// green alien - go straight down then into a half-loop and return
-		else if (enemy.usertype == ENEMY_ALIEN_GREEN) {
-			if (enemy.pos.y > 116) {
-				data.yspeed -= 0.02;
-				if (enemy.pos.x < (Scene::SCENEW - TSIZE) / 2) 
-					data.xspeed += 0.02;
-				else
-					data.xspeed = max( data.xspeed - 0.02, 0.0 );
-			}
-			enemy.pos.x += data.xspeed;
-			enemy.pos.y += data.yspeed;
-			if (enemy.pos.y < -TSIZE * 2)
-				return true;
-		}
-		// zig-zag - go back and forth
-		else if (enemy.usertype == ENEMY_ORB_YELLOW) {
-			if (enemy.pos.x <= 0 || enemy.pos.x >= Scene::SCENEW - TSIZE)
-				data.xspeed = -data.xspeed;
-			enemy.pos.x += data.xspeed;
-			enemy.pos.y += data.yspeed;
-		}
-		// power-up - fly all over the place
-		else if (enemy.usertype == ENEMY_ALIEN_RED) {
-			if (enemy.pos.x <= 0)
-				data.xspeed = 1;
-			else if (enemy.pos.x >= Scene::SCENEW - TSIZE)
-				data.xspeed = -1;
-			else if (rand() % 5 == 0)
-				data.xspeed = -data.xspeed;
-			enemy.pos.x += data.xspeed;
-			enemy.pos.y += data.yspeed;
-		}
-		else {
-			printf("unknown enemy type: %d\n", enemy.usertype);
+		switch ( (ENEMY_T) enemy.usertype ) {
+			// straight down orb
+			case ENEMY_ORB:
+				enemy.pos.y += data.yspeed;
+				break;
+			// wobble orb
+			case ENEMY_ORB_WOBBLE:
+				data.xspeed += data.xacc;
+				if (abs(data.xspeed) >= 1.0)  data.xacc = -data.xacc;
+				enemy.pos.x += data.xspeed;
+				enemy.pos.y += data.yspeed;
+				break;
+			// green alien - go straight down then into a half-loop and return
+			case ENEMY_ALIEN_GREEN:
+				if (enemy.pos.y > 116) {
+					data.yspeed -= 0.02;
+					if (enemy.pos.x < (Scene::SCENEW - TSIZE) / 2) 
+						data.xspeed += 0.02;
+					else
+						data.xspeed = max( data.xspeed - 0.02, 0.0 );
+				}
+				enemy.pos.x += data.xspeed;
+				enemy.pos.y += data.yspeed;
+				if (enemy.pos.y < -TSIZE * 2)
+					return true;
+				break;
+			// zig-zag - go back and forth
+			case ENEMY_ORB_YELLOW:
+				if (enemy.pos.x <= 0 || enemy.pos.x >= Scene::SCENEW - TSIZE)
+					data.xspeed = -data.xspeed;
+				enemy.pos.x += data.xspeed;
+				enemy.pos.y += data.yspeed;
+				break;
+			// power-up - fly all over the place
+			case ENEMY_ALIEN_RED:
+				if (enemy.pos.x <= 0)
+					data.xspeed = 1;
+				else if (enemy.pos.x >= Scene::SCENEW - TSIZE)
+					data.xspeed = -1;
+				else if (rand() % 5 == 0)
+					data.xspeed = -data.xspeed;
+				enemy.pos.x += data.xspeed;
+				enemy.pos.y += data.yspeed;
+				break;
+			// explosion animation - play 3 frames then delete object
+			case ENEMY_EXPLOSION:
+				if (data.delta >= 15) {
+					data.frameoffset = data.frameoffset + 1;
+					data.delta = 0;
+					if (data.frameoffset >= 3) {
+						kill( enemyid );
+					}
+				}
+				break;
 		}
 
 		// check offscreen bottom, return true if dead

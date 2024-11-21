@@ -14,5 +14,5 @@ TODO:
 	- add invincibility frames on strike - OK
 	- add game restart - OK
 	- add player animations - OK
-	- add explosions on deaths
+	- add explosions on deaths - OK
 	- new weapons
